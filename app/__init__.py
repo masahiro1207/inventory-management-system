@@ -20,11 +20,13 @@ def create_app():
     
     # 本番環境ではPostgreSQLのみ使用（SQLiteを完全に無効化）
     if os.environ.get('RAILWAY_ENVIRONMENT'):
+        # デバッグ情報を出力
+        print(f"DEBUG: RAILWAY_ENVIRONMENT = {os.environ.get('RAILWAY_ENVIRONMENT')}")
+        print(f"DEBUG: DATABASE_URL = {os.environ.get('DATABASE_URL')}")
+        print(f"DEBUG: DATABASE_PUBLIC_URL = {os.environ.get('DATABASE_PUBLIC_URL')}")
+        print(f"DEBUG: Final database_url = {database_url}")
+        
         if not database_url.startswith('postgresql://'):
-            # デバッグ情報を出力
-            print(f"DEBUG: DATABASE_URL = {os.environ.get('DATABASE_URL')}")
-            print(f"DEBUG: DATABASE_PUBLIC_URL = {os.environ.get('DATABASE_PUBLIC_URL')}")
-            print(f"DEBUG: Final database_url = {database_url}")
             raise ValueError("PostgreSQL database is required in Railway environment. Please add a PostgreSQL database to your Railway project.")
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url

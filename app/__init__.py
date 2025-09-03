@@ -13,14 +13,15 @@ def create_app():
     
     # データベース設定（本番環境では環境変数から取得）
     database_url = os.environ.get('DATABASE_URL', 'sqlite:///inventory.db')
+    
+    # PostgreSQLのURLを修正
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     
-    # 本番環境ではSQLiteのパスを修正
-    if database_url.startswith('sqlite:///'):
-        # Railwayでは/tmpディレクトリを使用
-        if os.environ.get('RAILWAY_ENVIRONMENT'):
-            database_url = 'sqlite:////tmp/inventory.db'
+    # 本番環境ではPostgreSQLを優先使用
+    if os.environ.get('RAILWAY_ENVIRONMENT') and not database_url.startswith('postgresql://'):
+        # Railway環境でPostgreSQLが利用できない場合はSQLiteを使用
+        database_url = 'sqlite:////tmp/inventory.db'
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

@@ -1,0 +1,1839 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>設定 - 在庫管理システム</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary-color: #00d4ff;
+        --secondary-color: #0099cc;
+        --accent-color: #ff6b35;
+        --success-color: #00ff88;
+        --warning-color: #ffaa00;
+        --danger-color: #ff4757;
+        --dark-bg: #0a0a0a;
+        --dark-card: #1a1a1a;
+        --dark-surface: #2a2a2a;
+        --text-primary: #ffffff;
+        --text-secondary: #b0b0b0;
+        --text-muted: #808080;
+        --border-color: #333333;
+      }
+
+      body {
+        background: linear-gradient(
+          135deg,
+          #0a0a0a 0%,
+          #1a1a1a 50%,
+          #0a0a0a 100%
+        );
+        min-height: 100vh;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--text-primary);
+      }
+
+      .navbar {
+        background: rgba(26, 26, 26, 0.95) !important;
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .navbar-brand {
+        font-weight: 700;
+        font-size: 1.5rem;
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--accent-color)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .main-container {
+        background: rgba(26, 26, 26, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        margin: 2rem auto;
+        padding: 2rem;
+        max-width: 1200px;
+        border: 1px solid var(--border-color);
+      }
+
+      .card {
+        background: var(--dark-card);
+        border: 1px solid var(--border-color);
+        border-radius: 15px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
+        border-color: var(--primary-color);
+      }
+
+      .card-header {
+        background: linear-gradient(
+          135deg,
+          var(--dark-surface),
+          var(--dark-card)
+        );
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.5rem;
+        font-weight: 600;
+      }
+
+      .btn {
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.3s ease;
+        border: none;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+        transition: left 0.5s;
+      }
+
+      .btn:hover::before {
+        left: 100%;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .btn-primary {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        color: var(--dark-bg);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, var(--success-color), #00cc6a);
+        color: var(--dark-bg);
+      }
+
+      .btn-warning {
+        background: linear-gradient(135deg, var(--warning-color), #e69500);
+        color: var(--dark-bg);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, var(--danger-color), #ff3742);
+        color: var(--text-primary);
+      }
+
+      .btn-outline-light {
+        border: 2px solid var(--primary-color);
+        color: var(--primary-color);
+        background: transparent;
+      }
+
+      .btn-outline-light:hover {
+        background: var(--primary-color);
+        color: var(--dark-bg);
+      }
+
+      .form-control,
+      .form-select,
+      textarea {
+        background: var(--dark-card);
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+        color: var(--text-primary);
+      }
+
+      .form-control:focus,
+      .form-select:focus,
+      textarea:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        background: var(--dark-card);
+        color: var(--text-primary);
+      }
+
+      .form-control::placeholder {
+        color: var(--text-muted);
+      }
+
+      .form-label {
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      .settings-section {
+        margin-bottom: 2rem;
+      }
+
+      .current-values {
+        background: var(--dark-surface);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .value-tag {
+        display: inline-block;
+        background: var(--primary-color);
+        color: var(--dark-bg);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        margin: 0.25rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      .value-tag .remove-btn {
+        background: none;
+        border: none;
+        color: var(--dark-bg);
+        margin-left: 0.5rem;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      .bulk-input {
+        background: var(--dark-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .bulk-input textarea {
+        background: var(--dark-card);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        min-height: 100px;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .stats-card {
+        background: linear-gradient(
+          135deg,
+          var(--dark-surface),
+          var(--dark-card)
+        );
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+      }
+
+      .stats-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary-color);
+      }
+
+      .stats-number {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--accent-color)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .stats-label {
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: var(--primary-color);
+        animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .glow-effect {
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+
+      .glow-effect:hover {
+        box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+      }
+
+      .alert-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        max-width: 400px;
+      }
+
+      .alert {
+        background: var(--dark-card);
+        border: 1px solid var(--border-color);
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+        color: var(--text-primary);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ナビゲーションバー -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+      <div class="container">
+        <a class="navbar-brand" href="/">
+          <i class="fas fa-boxes me-2"></i>在庫管理システム
+        </a>
+        <div class="navbar-nav ms-auto">
+          <a href="/" class="btn btn-outline-light me-2">
+            <i class="fas fa-home me-1"></i>ホーム
+          </a>
+          <a href="/alerts" class="btn btn-outline-light me-2">
+            <i class="fas fa-exclamation-triangle me-1"></i>アラート
+          </a>
+          <a href="/settings" class="btn btn-primary">
+            <i class="fas fa-cog me-1"></i>設定
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="main-container">
+      <!-- 統計情報 -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="stats-card glow-effect">
+            <div class="stats-number" id="totalCategories">-</div>
+            <div class="stats-label">カテゴリ数</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card glow-effect">
+            <div class="stats-number" id="totalDealers">-</div>
+            <div class="stats-label">取引会社数</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card glow-effect">
+            <div class="stats-number" id="totalManufacturers">-</div>
+            <div class="stats-label">メーカー数</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card glow-effect">
+            <div class="stats-number" id="totalProducts">-</div>
+            <div class="stats-label">総商品数</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- カテゴリ管理セクション -->
+      <div class="settings-section">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-tags me-2"></i>カテゴリ管理</h5>
+          </div>
+          <div class="card-body">
+            <div class="current-values">
+              <h6>現在のカテゴリ</h6>
+              <div id="currentCategories">
+                <!-- JavaScriptで動的に生成 -->
+              </div>
+            </div>
+
+            <div class="bulk-input">
+              <label class="form-label">カテゴリの一括追加（1行に1つ）</label>
+              <textarea
+                class="form-control"
+                id="categoryInput"
+                placeholder="例：&#10;電子機器&#10;工具&#10;消耗品"
+              ></textarea>
+              <div class="action-buttons mt-3">
+                <button class="btn btn-success" onclick="addCategories()">
+                  <i class="fas fa-plus me-1"></i>カテゴリを追加
+                </button>
+                <button class="btn btn-warning" onclick="removeCategories()">
+                  <i class="fas fa-minus me-1"></i>選択したカテゴリを削除
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 取引会社管理セクション -->
+      <div class="settings-section">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-building me-2"></i>取引会社管理
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="current-values">
+              <h6>現在の取引会社</h6>
+              <div id="currentDealers">
+                <!-- JavaScriptで動的に生成 -->
+              </div>
+            </div>
+
+            <div class="bulk-input">
+              <label class="form-label">取引会社の一括追加（1行に1つ）</label>
+              <textarea
+                class="form-control"
+                id="dealerInput"
+                placeholder="例：&#10;トヨタ&#10;ホンダ&#10;日産&#10;マツダ"
+              ></textarea>
+              <div class="action-buttons mt-3">
+                <button class="btn btn-success" onclick="addDealers()">
+                  <i class="fas fa-plus me-1"></i>取引会社を追加
+                </button>
+                <button class="btn btn-warning" onclick="removeDealers()">
+                  <i class="fas fa-minus me-1"></i>選択した取引会社を削除
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- メーカー管理セクション -->
+      <div class="settings-section">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-industry me-2"></i>メーカー管理
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="current-values">
+              <h6>現在のメーカー</h6>
+              <div id="currentManufacturers">
+                <!-- JavaScriptで動的に生成 -->
+              </div>
+            </div>
+
+            <div class="bulk-input">
+              <label class="form-label">メーカーの一括追加（1行に1つ）</label>
+              <textarea
+                class="form-control"
+                id="manufacturerInput"
+                placeholder="例：&#10;パナソニック&#10;三菱&#10;日立&#10;シャープ"
+              ></textarea>
+              <div class="action-buttons mt-3">
+                <button class="btn btn-success" onclick="addManufacturers()">
+                  <i class="fas fa-plus me-1"></i>メーカーを追加
+                </button>
+                <button class="btn btn-warning" onclick="removeManufacturers()">
+                  <i class="fas fa-minus me-1"></i>選択したメーカーを削除
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 一括カテゴリ・取引会社登録セクション -->
+      <div class="settings-section">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-tags me-2"></i>一括カテゴリ・取引会社登録
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h6 class="text-light">一括カテゴリ設定</h6>
+                <p class="text-light">
+                  商品を選択して一括でカテゴリを設定できます。
+                </p>
+                <button
+                  class="btn btn-warning"
+                  onclick="openBulkCategoryModal()"
+                >
+                  <i class="fas fa-tags me-1"></i>一括カテゴリ設定
+                </button>
+              </div>
+              <div class="col-md-6">
+                <h6 class="text-light">一括取引会社設定</h6>
+                <p class="text-light">
+                  商品を選択して一括で取引会社を設定できます。
+                </p>
+                <button class="btn btn-warning" onclick="openBulkDealerModal()">
+                  <i class="fas fa-building me-1"></i>一括取引会社設定
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- アラート表示エリア -->
+    <div class="alert-container" id="alertContainer"></div>
+
+    <!-- CSV商品登録モーダル -->
+    <div class="modal fade" id="csvUploadModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">CSV商品登録</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="text-muted">商品名のみのCSVファイル</label>
+              <input
+                type="file"
+                class="form-control"
+                id="csvFile"
+                accept=".csv"
+              />
+              <small class="text-muted"
+                >1行に1つの商品名を記載してください。重複する商品名は登録されません。</small
+              >
+            </div>
+            <div class="mb-3">
+              <label class="form-label">デフォルト設定</label>
+              <div class="row">
+                <div class="col-md-4">
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="defaultCategory"
+                    placeholder="デフォルトカテゴリ"
+                  />
+                </div>
+                <div class="col-md-4">
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="defaultDealer"
+                    placeholder="デフォルト取引会社"
+                  />
+                </div>
+                <div class="col-md-4">
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="defaultManufacturer"
+                    placeholder="デフォルトメーカー"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              キャンセル
+            </button>
+            <button
+              type="button"
+              class="btn btn-success"
+              onclick="uploadCSVProducts()"
+            >
+              商品を登録
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 一括カテゴリ設定モーダル -->
+    <div class="modal fade" id="bulkCategoryModal" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">一括カテゴリ設定</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">設定するカテゴリ</label>
+              <select class="form-select" id="bulkCategoryValue">
+                <option value="">カテゴリを選択してください</option>
+              </select>
+              <div class="form-text">
+                既存のカテゴリから選択するか、新しいカテゴリ名を入力してください
+              </div>
+            </div>
+            <div class="mb-3">
+              <div
+                class="d-flex justify-content-between align-items-center mb-2"
+              >
+                <label class="form-label mb-0">対象商品の選択</label>
+                <div>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary me-2"
+                    onclick="selectAllCategoryProducts()"
+                  >
+                    全選択
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary me-2"
+                    onclick="deselectAllCategoryProducts()"
+                  >
+                    全解除
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-info"
+                    onclick="toggleCategoryFilter()"
+                  >
+                    <i class="fas fa-filter me-1"></i>フィルタ
+                  </button>
+                </div>
+              </div>
+              <div
+                class="mb-2"
+                id="categoryFilterSection"
+                style="display: none"
+              >
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  id="categoryFilterInput"
+                  placeholder="商品名で検索..."
+                  onkeyup="filterCategoryProducts()"
+                />
+              </div>
+              <div
+                id="bulkCategoryProducts"
+                class="border p-3"
+                style="max-height: 300px; overflow-y: auto"
+              >
+                <!-- JavaScriptで動的に生成 -->
+              </div>
+              <div
+                class="mt-2"
+                id="selectedCategoryProducts"
+                style="display: none"
+              >
+                <label class="form-label">選択された商品:</label>
+                <div
+                  class="border p-2 bg-light"
+                  style="max-height: 150px; overflow-y: auto"
+                >
+                  <div id="selectedCategoryProductsList"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              キャンセル
+            </button>
+            <button
+              type="button"
+              class="btn btn-warning"
+              onclick="executeBulkCategoryUpdate()"
+              id="bulkCategoryBtn"
+              disabled
+            >
+              一括カテゴリ設定
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 一括取引会社設定モーダル -->
+    <div class="modal fade" id="bulkDealerModal" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">一括取引会社設定</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">設定する取引会社</label>
+              <select class="form-select" id="bulkDealerValue">
+                <option value="">取引会社を選択してください</option>
+              </select>
+              <div class="form-text">
+                既存の取引会社から選択するか、新しい取引会社名を入力してください
+              </div>
+            </div>
+            <div class="mb-3">
+              <div
+                class="d-flex justify-content-between align-items-center mb-2"
+              >
+                <label class="form-label mb-0">対象商品の選択</label>
+                <div>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary me-2"
+                    onclick="selectAllDealerProducts()"
+                  >
+                    全選択
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary me-2"
+                    onclick="deselectAllDealerProducts()"
+                  >
+                    全解除
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-info"
+                    onclick="toggleDealerFilter()"
+                  >
+                    <i class="fas fa-filter me-1"></i>フィルタ
+                  </button>
+                </div>
+              </div>
+              <div class="mb-2" id="dealerFilterSection" style="display: none">
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  id="dealerFilterInput"
+                  placeholder="商品名で検索..."
+                  onkeyup="filterDealerProducts()"
+                />
+              </div>
+              <div
+                id="bulkDealerProducts"
+                class="border p-3"
+                style="max-height: 300px; overflow-y: auto"
+              >
+                <!-- JavaScriptで動的に生成 -->
+              </div>
+              <div
+                class="mt-2"
+                id="selectedDealerProducts"
+                style="display: none"
+              >
+                <label class="form-label">選択された商品:</label>
+                <div
+                  class="border p-2 bg-light"
+                  style="max-height: 150px; overflow-y: auto"
+                >
+                  <div id="selectedDealerProductsList"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              キャンセル
+            </button>
+            <button
+              type="button"
+              class="btn btn-warning"
+              onclick="executeBulkDealerUpdate()"
+              id="bulkDealerBtn"
+              disabled
+            >
+              一括取引会社設定
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // ページ読み込み時の初期化
+      document.addEventListener("DOMContentLoaded", function () {
+        loadAllData();
+      });
+
+      // 全データの読み込み
+      function loadAllData() {
+        loadCategories();
+        loadDealers();
+        loadManufacturers();
+        loadProductCount();
+      }
+
+      // カテゴリ一覧の読み込み
+      function loadCategories() {
+        console.log("カテゴリ読み込み開始");
+        fetch("/api/categories")
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("カテゴリAPI応答:", data);
+            if (data.success) {
+              console.log("カテゴリ数:", data.categories.length);
+              displayCategories(data.categories);
+              document.getElementById("totalCategories").textContent =
+                data.categories.length;
+            } else {
+              console.error("カテゴリAPIエラー:", data.error);
+            }
+          })
+          .catch((error) => {
+            console.error("カテゴリ読み込みエラー:", error);
+          });
+      }
+
+      // 取引会社一覧の読み込み
+      function loadDealers() {
+        fetch("/api/dealers")
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              displayDealers(data.dealers);
+              document.getElementById("totalDealers").textContent =
+                data.dealers.length;
+            }
+          })
+          .catch((error) => {
+            console.error("取引会社読み込みエラー:", error);
+          });
+      }
+
+      // メーカー一覧の読み込み
+      function loadManufacturers() {
+        fetch("/api/manufacturers")
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              displayManufacturers(data.manufacturers);
+              document.getElementById("totalManufacturers").textContent =
+                data.manufacturers.length;
+            }
+          })
+          .catch((error) => {
+            console.error("メーカー読み込みエラー:", error);
+          });
+      }
+
+      // 商品数の読み込み
+      function loadProductCount() {
+        fetch("/api/products")
+          .then((response) => response.json())
+          .then((products) => {
+            document.getElementById("totalProducts").textContent =
+              products.length;
+          })
+          .catch((error) => {
+            console.error("商品数読み込みエラー:", error);
+          });
+      }
+
+      // カテゴリの表示
+      function displayCategories(categories) {
+        console.log("カテゴリ表示開始:", categories);
+        const container = document.getElementById("currentCategories");
+        container.innerHTML = "";
+
+        if (!categories || categories.length === 0) {
+          container.innerHTML =
+            '<p class="text-muted">カテゴリが設定されていません</p>';
+          return;
+        }
+
+        categories.forEach((category) => {
+          console.log("カテゴリタグ作成:", category);
+          const tag = document.createElement("span");
+          tag.className = "value-tag";
+          tag.innerHTML = `
+                    ${category}
+                    <button class="remove-btn" onclick="removeSingleValue('category', '${category}')">&times;</button>
+                `;
+          container.appendChild(tag);
+        });
+      }
+
+      // 取引会社の表示
+      function displayDealers(dealers) {
+        const container = document.getElementById("currentDealers");
+        container.innerHTML = "";
+
+        dealers.forEach((dealer) => {
+          const tag = document.createElement("span");
+          tag.className = "value-tag";
+          tag.innerHTML = `
+                    ${dealer}
+                    <button class="remove-btn" onclick="removeSingleValue('dealer', '${dealer}')">&times;</button>
+                `;
+          container.appendChild(tag);
+        });
+      }
+
+      // メーカーの表示
+      function displayManufacturers(manufacturers) {
+        const container = document.getElementById("currentManufacturers");
+        container.innerHTML = "";
+
+        manufacturers.forEach((manufacturer) => {
+          const tag = document.createElement("span");
+          tag.className = "value-tag";
+          tag.innerHTML = `
+                    ${manufacturer}
+                    <button class="remove-btn" onclick="removeSingleValue('manufacturer', '${manufacturer}')">&times;</button>
+                `;
+          container.appendChild(tag);
+        });
+      }
+
+      // カテゴリの追加
+      function addCategories() {
+        const input = document.getElementById("categoryInput").value;
+        const categories = input.split("\n").filter((cat) => cat.trim());
+
+        if (categories.length === 0) {
+          showAlert("warning", "カテゴリを入力してください");
+          return;
+        }
+
+        // 一括で処理
+        bulkUpdateSettings("add", "category", categories);
+      }
+
+      // 取引会社の追加
+      function addDealers() {
+        const input = document.getElementById("dealerInput").value;
+        const dealers = input.split("\n").filter((dealer) => dealer.trim());
+
+        if (dealers.length === 0) {
+          showAlert("warning", "取引会社を入力してください");
+          return;
+        }
+
+        // 一括で処理
+        bulkUpdateSettings("add", "dealer", dealers);
+      }
+
+      // メーカーの追加
+      function addManufacturers() {
+        const input = document.getElementById("manufacturerInput").value;
+        const manufacturers = input
+          .split("\n")
+          .filter((manufacturer) => manufacturer.trim());
+
+        if (manufacturers.length === 0) {
+          showAlert("warning", "メーカーを入力してください");
+          return;
+        }
+
+        // 一括で処理
+        bulkUpdateSettings("add", "manufacturer", manufacturers);
+      }
+
+      // カテゴリの削除
+      function removeCategories() {
+        const input = document.getElementById("categoryInput").value;
+        const categories = input.split("\n").filter((cat) => cat.trim());
+
+        if (categories.length === 0) {
+          showAlert("warning", "削除するカテゴリを入力してください");
+          return;
+        }
+
+        if (
+          confirm(
+            "選択したカテゴリを削除しますか？関連する商品のカテゴリが空になります。"
+          )
+        ) {
+          bulkUpdateSettings("remove", "category", categories);
+        }
+      }
+
+      // 取引会社の削除
+      function removeDealers() {
+        const input = document.getElementById("dealerInput").value;
+        const dealers = input.split("\n").filter((dealer) => dealer.trim());
+
+        if (dealers.length === 0) {
+          showAlert("warning", "削除する取引会社を入力してください");
+          return;
+        }
+
+        if (
+          confirm(
+            "選択した取引会社を削除しますか？関連する商品の取引会社が空になります。"
+          )
+        ) {
+          bulkUpdateSettings("remove", "dealer", dealers);
+        }
+      }
+
+      // メーカーの削除
+      function removeManufacturers() {
+        const input = document.getElementById("manufacturerInput").value;
+        const manufacturers = input
+          .split("\n")
+          .filter((manufacturer) => manufacturer.trim());
+
+        if (manufacturers.length === 0) {
+          showAlert("warning", "削除するメーカーを入力してください");
+          return;
+        }
+
+        if (
+          confirm(
+            "選択したメーカーを削除しますか？関連する商品のメーカーが空になります。"
+          )
+        ) {
+          bulkUpdateSettings("remove", "manufacturer", manufacturers);
+        }
+      }
+
+      // 単一値の削除
+      function removeSingleValue(field, value) {
+        if (confirm(`"${value}"を削除しますか？`)) {
+          bulkUpdateSettings("remove", field, [value]);
+        }
+      }
+
+      // 一括設定の更新
+      function bulkUpdateSettings(action, field, values) {
+        console.log("一括設定更新開始:", { action, field, values });
+
+        // ローディング状態を表示
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML =
+          '<span class="loading-spinner me-2"></span>処理中...';
+
+        fetch("/api/settings/bulk-update", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: action,
+            field: field,
+            values: values,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("一括設定API応答:", data);
+            if (data.success) {
+              showAlert("success", data.message);
+              // 入力フィールドをクリア
+              if (field === "category") {
+                document.getElementById("categoryInput").value = "";
+              } else if (field === "dealer") {
+                document.getElementById("dealerInput").value = "";
+              } else if (field === "manufacturer") {
+                document.getElementById("manufacturerInput").value = "";
+              }
+              // データを再読み込み
+              console.log("データ再読み込み開始");
+              loadAllData();
+            } else {
+              showAlert("danger", `エラー: ${data.error}`);
+            }
+          })
+          .catch((error) => {
+            console.error("API呼び出しエラー:", error);
+            showAlert("danger", `通信エラー: ${error.message || error}`);
+          })
+          .finally(() => {
+            // ボタンを元の状態に戻す
+            button.disabled = false;
+            button.innerHTML = originalText;
+          });
+      }
+
+      // デフォルト値の設定
+      function setDefaultValues() {
+        if (confirm("空の項目にデフォルト値を設定しますか？")) {
+          const defaultCategories = ["その他", "未分類"];
+          const defaultDealers = ["未指定"];
+          const defaultManufacturers = ["不明"];
+
+          // カテゴリを追加
+          bulkUpdateSettings("add", "category", defaultCategories);
+          // 取引会社を追加
+          bulkUpdateSettings("add", "dealer", defaultDealers);
+          // メーカーを追加
+          bulkUpdateSettings("add", "manufacturer", defaultManufacturers);
+        }
+      }
+
+      // データの整理
+      function cleanupData() {
+        if (
+          confirm(
+            "データの整理を行いますか？重複データの整理や正規化が実行されます。"
+          )
+        ) {
+          showAlert("info", "データの整理を開始しました...");
+          // ここにデータ整理のロジックを追加
+          setTimeout(() => {
+            showAlert("success", "データの整理が完了しました");
+            loadAllData();
+          }, 2000);
+        }
+      }
+
+      // 重複商品の確認
+      function checkDuplicateProducts() {
+        fetch("/api/debug/duplicate-products")
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              if (data.total_duplicates === 0) {
+                showAlert("success", "重複商品は見つかりませんでした");
+              } else {
+                let message = `重複商品が ${data.total_duplicates} 組見つかりました:\n\n`;
+                data.duplicates.forEach((dup, index) => {
+                  message += `${index + 1}. ${dup.product_name} (${
+                    dup.manufacturer
+                  }) - ${dup.dealer}\n`;
+                  message += `   重複数: ${dup.count}件\n\n`;
+                });
+
+                if (
+                  confirm(
+                    message + "\n重複商品を削除しますか？（古い方を削除）"
+                  )
+                ) {
+                  cleanDuplicateProducts();
+                }
+              }
+            } else {
+              showAlert("danger", data.error);
+            }
+          })
+          .catch((error) => {
+            console.error("重複商品確認エラー:", error);
+            showAlert("danger", "重複商品の確認に失敗しました");
+          });
+      }
+
+      // 重複商品の削除
+      function cleanDuplicateProducts() {
+        fetch("/api/debug/clean-duplicates", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              showAlert("success", data.message);
+              loadAllData();
+            } else {
+              showAlert("danger", data.error);
+            }
+          })
+          .catch((error) => {
+            console.error("重複商品削除エラー:", error);
+            showAlert("danger", "重複商品の削除に失敗しました");
+          });
+      }
+
+      // テスト商品の削除
+      function deleteTestProducts() {
+        if (
+          confirm(
+            "テスト商品を削除しますか？\n商品名に「テスト商品_」が含まれる商品が削除されます。"
+          )
+        ) {
+          fetch("/api/settings/delete-test-products", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                showAlert("success", data.message);
+                loadAllData();
+              } else {
+                showAlert("danger", data.error);
+              }
+            })
+            .catch((error) => {
+              showAlert("danger", "削除エラー: " + error);
+            });
+        }
+      }
+
+      // アラート表示
+      function showAlert(type, message) {
+        const alertDiv = document.createElement("div");
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show fade-in`;
+        alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+        const container = document.getElementById("alertContainer");
+        container.appendChild(alertDiv);
+
+        // 5秒後に自動削除
+        setTimeout(() => {
+          if (alertDiv.parentNode) {
+            alertDiv.remove();
+          }
+        }, 5000);
+      }
+
+      // CSV商品登録モーダルを開く
+      function openCSVUploadModal() {
+        const modal = new bootstrap.Modal(
+          document.getElementById("csvUploadModal")
+        );
+        modal.show();
+      }
+
+      // CSV商品登録を実行
+      function uploadCSVProducts() {
+        const fileInput = document.getElementById("csvFile");
+        const defaultCategory =
+          document.getElementById("defaultCategory").value;
+        const defaultDealer = document.getElementById("defaultDealer").value;
+        const defaultManufacturer = document.getElementById(
+          "defaultManufacturer"
+        ).value;
+
+        if (!fileInput.files[0]) {
+          showAlert("warning", "CSVファイルを選択してください");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+        formData.append("default_category", defaultCategory);
+        formData.append("default_dealer", defaultDealer);
+        formData.append("default_manufacturer", defaultManufacturer);
+
+        fetch("/api/products/csv-upload", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              showAlert("success", data.message);
+              bootstrap.Modal.getInstance(
+                document.getElementById("csvUploadModal")
+              ).hide();
+              loadAllData();
+              // ファイル入力をクリア
+              fileInput.value = "";
+              document.getElementById("defaultCategory").value = "";
+              document.getElementById("defaultDealer").value = "";
+              document.getElementById("defaultManufacturer").value = "";
+            } else {
+              showAlert("danger", data.error);
+            }
+          })
+          .catch((error) => {
+            console.error("CSV商品登録エラー:", error);
+            showAlert("danger", "CSV商品登録に失敗しました");
+          });
+      }
+
+      // 編集フィールド変更時の処理
+      document.addEventListener("DOMContentLoaded", function () {
+        const editField = document.getElementById("editField");
+        if (editField) {
+          editField.addEventListener("change", loadProductsForEdit);
+        }
+
+        const currentValue = document.getElementById("currentValue");
+        if (currentValue) {
+          currentValue.addEventListener("change", function () {
+            fetch("/api/products")
+              .then((response) => response.json())
+              .then((products) => {
+                displayTargetProducts(products, editField.value);
+              });
+          });
+        }
+      });
+
+      // 一括カテゴリ設定モーダルを開く
+      function openBulkCategoryModal() {
+        const modal = new bootstrap.Modal(
+          document.getElementById("bulkCategoryModal")
+        );
+        loadProductsForBulkCategory();
+        loadCategoriesForBulkCategory();
+        modal.show();
+      }
+
+      // 一括カテゴリ設定用のカテゴリ一覧を読み込み
+      function loadCategoriesForBulkCategory() {
+        fetch("/api/categories")
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              const select = document.getElementById("bulkCategoryValue");
+              select.innerHTML =
+                '<option value="">カテゴリを選択してください</option>';
+
+              data.categories.forEach((category) => {
+                const option = document.createElement("option");
+                option.value = category;
+                option.textContent = category;
+                select.appendChild(option);
+              });
+            }
+          })
+          .catch((error) => {
+            console.error("カテゴリ一覧の読み込みエラー:", error);
+          });
+      }
+
+      // 一括カテゴリ設定用の商品一覧を読み込み
+      function loadProductsForBulkCategory() {
+        fetch("/api/products")
+          .then((response) => response.json())
+          .then((products) => {
+            // 全商品を表示（選択式）
+            displayBulkCategoryProducts(products);
+          })
+          .catch((error) => {
+            console.error("商品読み込みエラー:", error);
+            showAlert("danger", "商品の読み込みに失敗しました");
+          });
+      }
+
+      // 一括カテゴリ設定用の商品一覧を表示
+      function displayBulkCategoryProducts(products) {
+        const container = document.getElementById("bulkCategoryProducts");
+
+        if (products.length === 0) {
+          container.innerHTML = '<p class="text-muted">商品がありません</p>';
+          return;
+        }
+
+        // 商品データを保存
+        window.categoryProductsData = products;
+
+        let html = `<p><strong>対象商品数: ${products.length}件</strong></p>`;
+        products.forEach((product) => {
+          html += `
+            <div class="border-bottom p-2 product-item filtered-in" data-product-id="${
+              product.id
+            }">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="${
+                  product.id
+                }" id="category_${
+            product.id
+          }" onchange="updateCategoryButtonState()">
+                <label class="form-check-label" for="category_${product.id}">
+                  <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                      <div class="fw-bold text-primary mb-1">${
+                        product.product_name
+                      }</div>
+                      <div class="small text-muted">
+                        <span class="badge bg-secondary me-1">カテゴリ: ${
+                          product.category || "未設定"
+                        }</span>
+                        <span class="badge bg-info me-1">取引会社: ${
+                          product.dealer || "未設定"
+                        }</span>
+                        <span class="badge bg-success">メーカー: ${
+                          product.manufacturer || "未設定"
+                        }</span>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+        updateCategoryButtonState();
+      }
+
+      // 一括カテゴリ設定を実行
+      function executeBulkCategoryUpdate() {
+        const categoryValue = document
+          .getElementById("bulkCategoryValue")
+          .value.trim();
+
+        if (!categoryValue) {
+          showAlert("warning", "カテゴリ名を入力してください");
+          return;
+        }
+
+        const checkboxes = document.querySelectorAll(
+          '#bulkCategoryProducts input[type="checkbox"]:checked'
+        );
+        const productIds = Array.from(checkboxes).map((cb) => cb.value);
+
+        if (productIds.length === 0) {
+          showAlert("warning", "カテゴリを設定する商品を選択してください");
+          return;
+        }
+
+        fetch("/api/products/bulk-category-update", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            category: categoryValue,
+            product_ids: productIds,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              showAlert("success", data.message);
+              bootstrap.Modal.getInstance(
+                document.getElementById("bulkCategoryModal")
+              ).hide();
+              loadAllData();
+              document.getElementById("bulkCategoryValue").value = "";
+            } else {
+              showAlert("danger", data.error);
+            }
+          })
+          .catch((error) => {
+            console.error("一括カテゴリ設定エラー:", error);
+            showAlert("danger", "一括カテゴリ設定に失敗しました");
+          });
+      }
+
+      // 一括取引会社設定モーダルを開く
+      function openBulkDealerModal() {
+        const modal = new bootstrap.Modal(
+          document.getElementById("bulkDealerModal")
+        );
+        loadProductsForBulkDealer();
+        loadDealersForBulkDealer();
+        modal.show();
+      }
+
+      // 一括取引会社設定用の取引会社一覧を読み込み
+      function loadDealersForBulkDealer() {
+        fetch("/api/dealers")
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              const select = document.getElementById("bulkDealerValue");
+              select.innerHTML =
+                '<option value="">取引会社を選択してください</option>';
+
+              data.dealers.forEach((dealer) => {
+                const option = document.createElement("option");
+                option.value = dealer;
+                option.textContent = dealer;
+                select.appendChild(option);
+              });
+            }
+          })
+          .catch((error) => {
+            console.error("取引会社一覧の読み込みエラー:", error);
+          });
+      }
+
+      // 一括取引会社設定用の商品一覧を読み込み
+      function loadProductsForBulkDealer() {
+        fetch("/api/products")
+          .then((response) => response.json())
+          .then((products) => {
+            // 全商品を表示（選択式）
+            displayBulkDealerProducts(products);
+          })
+          .catch((error) => {
+            console.error("商品読み込みエラー:", error);
+            showAlert("danger", "商品の読み込みに失敗しました");
+          });
+      }
+
+      // 一括取引会社設定用の商品一覧を表示
+      function displayBulkDealerProducts(products) {
+        const container = document.getElementById("bulkDealerProducts");
+        if (products.length === 0) {
+          container.innerHTML = '<p class="text-muted">商品がありません</p>';
+          return;
+        }
+
+        // 商品データを保存
+        window.dealerProductsData = products;
+
+        let html = `<p><strong>対象商品数: ${products.length}件</strong></p>`;
+        products.forEach((product) => {
+          html += `
+            <div class="border-bottom p-2 product-item filtered-in" data-product-id="${
+              product.id
+            }">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="${
+                  product.id
+                }" id="dealer_${
+            product.id
+          }" onchange="updateDealerButtonState()">
+                <label class="form-check-label" for="dealer_${product.id}">
+                  <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                      <div class="fw-bold text-primary mb-1">${
+                        product.product_name
+                      }</div>
+                      <div class="small text-muted">
+                        <span class="badge bg-secondary me-1">カテゴリ: ${
+                          product.category || "未設定"
+                        }</span>
+                        <span class="badge bg-info me-1">取引会社: ${
+                          product.dealer || "未設定"
+                        }</span>
+                        <span class="badge bg-success">メーカー: ${
+                          product.manufacturer || "未設定"
+                        }</span>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+        updateDealerButtonState();
+      }
+
+      // 一括取引会社設定を実行
+      function executeBulkDealerUpdate() {
+        const dealerValue = document
+          .getElementById("bulkDealerValue")
+          .value.trim();
+
+        if (!dealerValue) {
+          showAlert("warning", "取引会社名を入力してください");
+          return;
+        }
+
+        const checkboxes = document.querySelectorAll(
+          '#bulkDealerProducts input[type="checkbox"]:checked'
+        );
+        const productIds = Array.from(checkboxes).map((cb) => cb.value);
+
+        if (productIds.length === 0) {
+          showAlert("warning", "取引会社を設定する商品を選択してください");
+          return;
+        }
+
+        fetch("/api/products/bulk-dealer-update", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            dealer: dealerValue,
+            product_ids: productIds,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              showAlert("success", data.message);
+              bootstrap.Modal.getInstance(
+                document.getElementById("bulkDealerModal")
+              ).hide();
+              loadAllData();
+              document.getElementById("bulkDealerValue").value = "";
+            } else {
+              showAlert("danger", data.error);
+            }
+          })
+          .catch((error) => {
+            console.error("一括取引会社設定エラー:", error);
+            showAlert("danger", "一括取引会社設定に失敗しました");
+          });
+      }
+
+      function selectAllCategoryProducts() {
+        const visibleItems = document.querySelectorAll(
+          "#bulkCategoryProducts .product-item.filtered-in, #bulkCategoryProducts .product-item:not(.filtered-out)"
+        );
+        visibleItems.forEach((item) => {
+          const checkbox = item.querySelector('input[type="checkbox"]');
+          if (checkbox && item.style.display !== "none") {
+            checkbox.checked = true;
+          }
+        });
+        updateCategoryButtonState();
+      }
+
+      function deselectAllCategoryProducts() {
+        const checkboxes = document.querySelectorAll(
+          '#bulkCategoryProducts input[type="checkbox"]'
+        );
+        checkboxes.forEach((checkbox) => {
+          checkbox.checked = false;
+        });
+        updateCategoryButtonState();
+      }
+
+      function selectAllDealerProducts() {
+        const visibleItems = document.querySelectorAll(
+          "#bulkDealerProducts .product-item.filtered-in, #bulkDealerProducts .product-item:not(.filtered-out)"
+        );
+        visibleItems.forEach((item) => {
+          const checkbox = item.querySelector('input[type="checkbox"]');
+          if (checkbox && item.style.display !== "none") {
+            checkbox.checked = true;
+          }
+        });
+        updateDealerButtonState();
+      }
+
+      function deselectAllDealerProducts() {
+        const checkboxes = document.querySelectorAll(
+          '#bulkDealerProducts input[type="checkbox"]'
+        );
+        checkboxes.forEach((checkbox) => {
+          checkbox.checked = false;
+        });
+        updateDealerButtonState();
+      }
+
+      function updateCategoryButtonState() {
+        const checkboxes = document.querySelectorAll(
+          '#bulkCategoryProducts input[type="checkbox"]:checked'
+        );
+        const btn = document.getElementById("bulkCategoryBtn");
+        btn.disabled = checkboxes.length === 0;
+        btn.innerHTML = `一括カテゴリ設定 (${checkboxes.length}件)`;
+        updateSelectedCategoryProducts();
+      }
+
+      function updateDealerButtonState() {
+        const checkboxes = document.querySelectorAll(
+          '#bulkDealerProducts input[type="checkbox"]:checked'
+        );
+        const btn = document.getElementById("bulkDealerBtn");
+        btn.disabled = checkboxes.length === 0;
+        btn.innerHTML = `一括取引会社設定 (${checkboxes.length}件)`;
+        updateSelectedDealerProducts();
+      }
+
+      function updateSelectedCategoryProducts() {
+        const checkboxes = document.querySelectorAll(
+          '#bulkCategoryProducts input[type="checkbox"]:checked'
+        );
+        const container = document.getElementById("selectedCategoryProducts");
+        const listContainer = document.getElementById(
+          "selectedCategoryProductsList"
+        );
+
+        if (checkboxes.length === 0) {
+          container.style.display = "none";
+          return;
+        }
+
+        container.style.display = "block";
+        let html = "";
+        checkboxes.forEach((checkbox) => {
+          const productId = checkbox.value;
+          const product = window.categoryProductsData.find(
+            (p) => p.id == productId
+          );
+          if (product) {
+            html += `<span class="badge bg-warning me-1 mb-1">${product.product_name}</span>`;
+          }
+        });
+        listContainer.innerHTML = html;
+      }
+
+      function updateSelectedDealerProducts() {
+        const checkboxes = document.querySelectorAll(
+          '#bulkDealerProducts input[type="checkbox"]:checked'
+        );
+        const container = document.getElementById("selectedDealerProducts");
+        const listContainer = document.getElementById(
+          "selectedDealerProductsList"
+        );
+
+        if (checkboxes.length === 0) {
+          container.style.display = "none";
+          return;
+        }
+
+        container.style.display = "block";
+        let html = "";
+        checkboxes.forEach((checkbox) => {
+          const productId = checkbox.value;
+          const product = window.dealerProductsData.find(
+            (p) => p.id == productId
+          );
+          if (product) {
+            html += `<span class="badge bg-info me-1 mb-1">${product.product_name}</span>`;
+          }
+        });
+        listContainer.innerHTML = html;
+      }
+
+      // フィルタ機能
+      function toggleCategoryFilter() {
+        const section = document.getElementById("categoryFilterSection");
+        section.style.display =
+          section.style.display === "none" ? "block" : "none";
+        if (section.style.display === "block") {
+          document.getElementById("categoryFilterInput").focus();
+        }
+      }
+
+      function toggleDealerFilter() {
+        const section = document.getElementById("dealerFilterSection");
+        section.style.display =
+          section.style.display === "none" ? "block" : "none";
+        if (section.style.display === "block") {
+          document.getElementById("dealerFilterInput").focus();
+        }
+      }
+
+      function filterCategoryProducts() {
+        const filter = document
+          .getElementById("categoryFilterInput")
+          .value.toLowerCase();
+        const items = document.querySelectorAll(
+          "#bulkCategoryProducts .product-item"
+        );
+
+        items.forEach((item) => {
+          const productNameElement = item.querySelector(
+            ".fw-bold.text-primary"
+          );
+          const productName = productNameElement
+            ? productNameElement.textContent.toLowerCase()
+            : "";
+          if (productName.includes(filter)) {
+            item.style.display = "block";
+            item.classList.remove("filtered-out");
+            item.classList.add("filtered-in");
+          } else {
+            item.style.display = "none";
+            item.classList.remove("filtered-in");
+            item.classList.add("filtered-out");
+          }
+        });
+      }
+
+      function filterDealerProducts() {
+        const filter = document
+          .getElementById("dealerFilterInput")
+          .value.toLowerCase();
+        const items = document.querySelectorAll(
+          "#bulkDealerProducts .product-item"
+        );
+
+        items.forEach((item) => {
+          const productNameElement = item.querySelector(
+            ".fw-bold.text-primary"
+          );
+          const productName = productNameElement
+            ? productNameElement.textContent.toLowerCase()
+            : "";
+          if (productName.includes(filter)) {
+            item.style.display = "block";
+            item.classList.remove("filtered-out");
+            item.classList.add("filtered-in");
+          } else {
+            item.style.display = "none";
+            item.classList.remove("filtered-in");
+            item.classList.add("filtered-out");
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

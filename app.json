@@ -1,0 +1,33 @@
+{
+  "name": "在庫管理システム",
+  "description": "Flask製の在庫管理システム",
+  "repository": "https://github.com/yourusername/inventory_management_system",
+  "logo": "",
+  "keywords": ["flask", "inventory", "management", "python"],
+  "env": {
+    "FLASK_APP": {
+      "description": "Flask application entry point",
+      "value": "run.py"
+    },
+    "FLASK_ENV": {
+      "description": "Flask environment",
+      "value": "production"
+    },
+    "SECRET_KEY": {
+      "description": "Flask secret key",
+      "generator": "secret"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
+}

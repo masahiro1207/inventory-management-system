@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>在庫不足アラート - 在庫管理システム</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary-color: #00d4ff;
+        --secondary-color: #0099cc;
+        --accent-color: #ff6b35;
+        --success-color: #00ff88;
+        --warning-color: #ffaa00;
+        --danger-color: #ff4757;
+        --dark-bg: #0a0a0a;
+        --dark-card: #1a1a1a;
+        --dark-surface: #2a2a2a;
+        --text-primary: #ffffff;
+        --text-secondary: #b0b0b0;
+        --text-muted: #808080;
+        --border-color: #333333;
+      }
+
+      body {
+        background: linear-gradient(
+          135deg,
+          #0a0a0a 0%,
+          #1a1a1a 50%,
+          #0a0a0a 100%
+        );
+        min-height: 100vh;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--text-primary);
+      }
+
+      .navbar {
+        background: rgba(26, 26, 26, 0.95) !important;
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .navbar-brand {
+        font-weight: 700;
+        font-size: 1.5rem;
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--accent-color)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .main-container {
+        background: rgba(26, 26, 26, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        margin: 2rem auto;
+        padding: 2rem;
+        max-width: 1200px;
+        border: 1px solid var(--border-color);
+      }
+
+      .card {
+        background: var(--dark-card);
+        border: 1px solid var(--border-color);
+        border-radius: 15px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
+        border-color: var(--primary-color);
+      }
+
+      .card-header {
+        background: linear-gradient(
+          135deg,
+          var(--dark-surface),
+          var(--dark-card)
+        );
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.5rem;
+        font-weight: 600;
+      }
+
+      .btn {
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.3s ease;
+        border: none;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+        transition: left 0.5s;
+      }
+
+      .btn:hover::before {
+        left: 100%;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .btn-primary {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        color: var(--dark-bg);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, var(--success-color), #00cc6a);
+        color: var(--dark-bg);
+      }
+
+      .btn-warning {
+        background: linear-gradient(135deg, var(--warning-color), #e69500);
+        color: var(--dark-bg);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, var(--danger-color), #ff3742);
+        color: var(--text-primary);
+      }
+
+      .btn-outline-light {
+        border: 2px solid var(--primary-color);
+        color: var(--primary-color);
+        background: transparent;
+      }
+
+      .btn-outline-light:hover {
+        background: var(--primary-color);
+        color: var(--dark-bg);
+      }
+
+      .form-control,
+      .form-select {
+        background: var(--dark-card);
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+        color: var(--text-primary);
+      }
+
+      .form-control:focus,
+      .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        background: var(--dark-card);
+        color: var(--text-primary);
+      }
+
+      .form-control::placeholder {
+        color: var(--text-muted);
+      }
+
+      .form-label {
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      .stats-card {
+        background: linear-gradient(
+          135deg,
+          var(--dark-surface),
+          var(--dark-card)
+        );
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+      }
+
+      .stats-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary-color);
+      }
+
+      .stats-number {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--accent-color)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .stats-label {
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .alert-item {
+        background: var(--dark-surface);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border-left: 5px solid;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .alert-item::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          45deg,
+          transparent,
+          rgba(255, 71, 87, 0.1),
+          transparent
+        );
+        transform: translateX(-100%);
+        transition: transform 0.6s ease;
+      }
+
+      .alert-item:hover::before {
+        transform: translateX(100%);
+      }
+
+      .alert-item:hover {
+        transform: translateX(10px);
+        box-shadow: 0 10px 25px rgba(255, 71, 87, 0.2);
+      }
+
+      .urgency-high {
+        border-left-color: var(--danger-color);
+        background: linear-gradient(
+          135deg,
+          rgba(255, 71, 87, 0.1),
+          var(--dark-surface)
+        );
+      }
+
+      .urgency-medium {
+        border-left-color: var(--warning-color);
+        background: linear-gradient(
+          135deg,
+          rgba(255, 170, 0, 0.1),
+          var(--dark-surface)
+        );
+      }
+
+      .urgency-low {
+        border-left-color: var(--success-color);
+        background: linear-gradient(
+          135deg,
+          rgba(0, 255, 136, 0.1),
+          var(--dark-surface)
+        );
+      }
+
+      .urgency-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .urgency-high .urgency-badge {
+        background: var(--danger-color);
+        color: var(--text-primary);
+      }
+
+      .urgency-medium .urgency-badge {
+        background: var(--warning-color);
+        color: var(--dark-bg);
+      }
+
+      .urgency-low .urgency-badge {
+        background: var(--success-color);
+        color: var(--dark-bg);
+      }
+
+      .alert-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+      }
+
+      .alert-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+      }
+
+      .detail-item {
+        background: var(--dark-card);
+        padding: 0.75rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+      }
+
+      .detail-label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .detail-value {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 1.1rem;
+      }
+
+      .shortage-amount {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--danger-color);
+        text-align: center;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .no-alerts {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-muted);
+      }
+
+      .no-alerts i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        color: var(--success-color);
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: var(--primary-color);
+        animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .glow-effect {
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+      }
+
+      .glow-effect:hover {
+        box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+      }
+
+      .filter-controls {
+        background: var(--dark-surface);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+      }
+
+      .dealer-filter {
+        background: var(--dark-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        color: var(--text-primary);
+        transition: all 0.3s ease;
+      }
+
+      .dealer-filter:hover {
+        border-color: var(--primary-color);
+      }
+
+      .alert-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        max-width: 400px;
+      }
+
+      .alert {
+        background: var(--dark-card);
+        border: 1px solid var(--border-color);
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+        color: var(--text-primary);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ナビゲーションバー -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+      <div class="container">
+        <a class="navbar-brand" href="/">
+          <i class="fas fa-boxes me-2"></i>在庫管理システム
+        </a>
+        <div class="navbar-nav ms-auto">
+          <a href="/" class="btn btn-outline-light me-2">
+            <i class="fas fa-home me-1"></i>ホーム
+          </a>
+          <a href="/alerts" class="btn btn-primary me-2">
+            <i class="fas fa-exclamation-triangle me-1"></i>アラート
+          </a>
+          <a href="/settings" class="btn btn-outline-light">
+            <i class="fas fa-cog me-1"></i>設定
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="main-container">
+      <!-- 統計情報 -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="stats-card glow-effect">
+            <div class="stats-number" id="totalAlerts">-</div>
+            <div class="stats-label">総アラート数</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card glow-effect">
+            <div class="stats-number" id="highUrgency">-</div>
+            <div class="stats-label">高緊急度</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card glow-effect">
+            <div class="stats-number" id="totalShortage">-</div>
+            <div class="stats-label">総不足数</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card glow-effect">
+            <div class="stats-number" id="affectedProducts">-</div>
+            <div class="stats-label">影響商品数</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- フィルタ・コントロール -->
+      <div class="filter-controls mb-4">
+        <div class="row">
+          <div class="col-md-4">
+            <label class="form-label">取引会社フィルタ</label>
+            <select
+              class="form-select dealer-filter"
+              id="dealerFilter"
+              onchange="filterAlerts()"
+            >
+              <option value="">全ての取引会社</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">緊急度フィルタ</label>
+            <select
+              class="form-select"
+              id="urgencyFilter"
+              onchange="filterAlerts()"
+            >
+              <option value="">全ての緊急度</option>
+              <option value="high">高緊急度</option>
+              <option value="medium">中緊急度</option>
+              <option value="low">低緊急度</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">操作</label>
+            <div class="d-flex gap-2">
+              <button
+                class="btn btn-warning"
+                onclick="refreshAlerts()"
+                id="refreshBtn"
+              >
+                <i class="fas fa-refresh me-1"></i>更新
+              </button>
+              <button
+                class="btn btn-success"
+                onclick="exportAlertsPDF()"
+                id="exportBtn"
+              >
+                <i class="fas fa-file-pdf me-1"></i>PDF出力
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- アラート一覧 -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-exclamation-triangle me-2"></i>在庫不足アラート一覧
+          </h5>
+        </div>
+        <div class="card-body">
+          <div id="alertsContainer">
+            <!-- JavaScriptで動的に生成 -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- アラート表示エリア -->
+    <div class="alert-container" id="alertContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      let currentDealer = "";
+      let currentUrgency = "";
+      let allAlerts = [];
+
+      // ページ読み込み時の初期化
+      document.addEventListener("DOMContentLoaded", function () {
+        loadDealers();
+        loadAlerts();
+        setInterval(loadAlerts, 30000); // 30秒ごとにアラート更新
+      });
+
+      // 取引会社一覧の読み込み
+      function loadDealers() {
+        fetch("/api/dealers")
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              const dealerFilter = document.getElementById("dealerFilter");
+
+              // 既存のオプションをクリア（「全ての取引会社」は保持）
+              dealerFilter.innerHTML =
+                '<option value="">全ての取引会社</option>';
+
+              data.dealers.forEach((dealer) => {
+                dealerFilter.innerHTML += `<option value="${dealer}">${dealer}</option>`;
+              });
+            }
+          })
+          .catch((error) => {
+            console.error("取引会社読み込みエラー:", error);
+          });
+      }
+
+      // アラートの読み込み
+      function loadAlerts() {
+        const btn = document.getElementById("refreshBtn");
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spinner me-2"></span>更新中...';
+
+        let url = "/api/alerts";
+        if (currentDealer) {
+          url += `?dealer=${encodeURIComponent(currentDealer)}`;
+        }
+
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              allAlerts = data.alerts;
+              displayAlerts(allAlerts);
+              updateStats(allAlerts);
+            } else {
+              showAlert("warning", data.error);
+            }
+          })
+          .catch((error) => {
+            showAlert("danger", "アラート読み込みエラー: " + error);
+          })
+          .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-refresh me-1"></i>更新';
+          });
+      }
+
+      // アラートの表示
+      function displayAlerts(alerts) {
+        const container = document.getElementById("alertsContainer");
+
+        if (alerts.length === 0) {
+          container.innerHTML = `
+                    <div class="no-alerts">
+                        <i class="fas fa-check-circle"></i>
+                        <h4>在庫不足の商品はありません</h4>
+                        <p>全ての商品が適切な在庫レベルを維持しています。</p>
+                    </div>
+                `;
+          return;
+        }
+
+        let html = "";
+        alerts.forEach((alert, index) => {
+          const shortage = alert.shortage;
+          const urgency = getUrgencyLevel(shortage);
+          const urgencyClass = `urgency-${urgency}`;
+          const urgencyText = getUrgencyText(urgency);
+
+          html += `
+                    <div class="alert-item ${urgencyClass} fade-in" data-urgency="${urgency}">
+                        <span class="urgency-badge">${urgencyText}</span>
+                        
+                        <div class="alert-title">${alert.product_name}</div>
+                        
+                        <div class="alert-details">
+                            <div class="detail-item">
+                                <div class="detail-label">メーカー</div>
+                                <div class="detail-value">${
+                                  alert.manufacturer
+                                }</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">現在在庫</div>
+                                <div class="detail-value">${
+                                  alert.current_stock
+                                }個</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">最低必要数</div>
+                                <div class="detail-value">${
+                                  alert.min_quantity
+                                }個</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">取引先</div>
+                                <div class="detail-value">${
+                                  alert.dealer || "未指定"
+                                }</div>
+                            </div>
+                        </div>
+                        
+                        <div class="shortage-amount">
+                            不足: ${shortage}個
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button class="btn btn-success" onclick="adjustStock(${
+                              alert.product_id || "unknown"
+                            }, ${shortage})">
+                                <i class="fas fa-plus me-1"></i>在庫を補充
+                            </button>
+                            <button class="btn btn-warning" onclick="setMinQuantity(${
+                              alert.product_id || "unknown"
+                            }, ${alert.current_stock})">
+                                <i class="fas fa-adjust me-1"></i>最低必要数を調整
+                            </button>
+                        </div>
+                    </div>
+                `;
+        });
+
+        container.innerHTML = html;
+      }
+
+      // 緊急度レベルの判定
+      function getUrgencyLevel(shortage) {
+        if (shortage > 10) return "high";
+        if (shortage > 5) return "medium";
+        return "low";
+      }
+
+      // 緊急度テキストの取得
+      function getUrgencyText(urgency) {
+        switch (urgency) {
+          case "high":
+            return "高緊急度";
+          case "medium":
+            return "中緊急度";
+          case "low":
+            return "低緊急度";
+          default:
+            return "不明";
+        }
+      }
+
+      // 統計情報の更新
+      function updateStats(alerts) {
+        const totalAlerts = alerts.length;
+        const highUrgency = alerts.filter(
+          (a) => getUrgencyLevel(a.shortage) === "high"
+        ).length;
+        const totalShortage = alerts.reduce((sum, a) => sum + a.shortage, 0);
+        const affectedProducts = new Set(alerts.map((a) => a.product_name))
+          .size;
+
+        document.getElementById("totalAlerts").textContent = totalAlerts;
+        document.getElementById("highUrgency").textContent = highUrgency;
+        document.getElementById("totalShortage").textContent = totalShortage;
+        document.getElementById("affectedProducts").textContent =
+          affectedProducts;
+      }
+
+      // フィルタの適用
+      function filterAlerts() {
+        currentDealer = document.getElementById("dealerFilter").value;
+        currentUrgency = document.getElementById("urgencyFilter").value;
+
+        let filteredAlerts = allAlerts;
+
+        // 取引会社フィルタ
+        if (currentDealer) {
+          filteredAlerts = filteredAlerts.filter(
+            (alert) => alert.dealer === currentDealer
+          );
+        }
+
+        // 緊急度フィルタ
+        if (currentUrgency) {
+          filteredAlerts = filteredAlerts.filter(
+            (alert) => getUrgencyLevel(alert.shortage) === currentUrgency
+          );
+        }
+
+        displayAlerts(filteredAlerts);
+        updateStats(filteredAlerts);
+      }
+
+      // アラートの更新
+      function refreshAlerts() {
+        loadAlerts();
+      }
+
+      // 在庫調整（仮実装）
+      function adjustStock(productId, amount) {
+        if (productId === "unknown") {
+          showAlert(
+            "warning",
+            "商品IDが不明です。ホームページから操作してください。"
+          );
+          return;
+        }
+
+        showAlert("info", "在庫調整機能はホームページで利用できます。");
+      }
+
+      // 最低必要数調整（仮実装）
+      function setMinQuantity(productId, currentStock) {
+        if (productId === "unknown") {
+          showAlert(
+            "warning",
+            "商品IDが不明です。ホームページから操作してください。"
+          );
+          return;
+        }
+
+        showAlert("info", "最低必要数調整機能はホームページで利用できます。");
+      }
+
+      // PDFエクスポート
+      function exportAlertsPDF() {
+        const btn = document.getElementById("exportBtn");
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spinner me-2"></span>出力中...';
+
+        let url = "/api/pdf/export";
+        if (currentDealer) {
+          url += `?dealer=${encodeURIComponent(currentDealer)}`;
+        }
+
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              showAlert("success", "PDFエクスポートが完了しました");
+            } else {
+              showAlert("danger", data.error);
+            }
+          })
+          .catch((error) => {
+            showAlert("danger", "エクスポートエラー: " + error);
+          })
+          .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-file-pdf me-1"></i>PDF出力';
+          });
+      }
+
+      // アラート表示
+      function showAlert(type, message) {
+        const alertDiv = document.createElement("div");
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show fade-in`;
+        alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+        const container = document.getElementById("alertContainer");
+        container.appendChild(alertDiv);
+
+        // 5秒後に自動削除
+        setTimeout(() => {
+          if (alertDiv.parentNode) {
+            alertDiv.remove();
+          }
+        }, 5000);
+      }
+    </script>
+  </body>
+</html>

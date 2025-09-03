@@ -18,10 +18,10 @@ def create_app():
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     
-    # 本番環境ではPostgreSQLを優先使用
-    if os.environ.get('RAILWAY_ENVIRONMENT') and not database_url.startswith('postgresql://'):
-        # Railway環境でPostgreSQLが利用できない場合はSQLiteを使用
-        database_url = 'sqlite:////tmp/inventory.db'
+    # 本番環境ではPostgreSQLのみ使用（SQLiteを完全に無効化）
+    if os.environ.get('RAILWAY_ENVIRONMENT'):
+        if not database_url.startswith('postgresql://'):
+            raise ValueError("PostgreSQL database is required in Railway environment. Please add a PostgreSQL database to your Railway project.")
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -44,9 +44,5 @@ def create_app():
         os.makedirs('uploads', exist_ok=True)
         os.makedirs('reports', exist_ok=True)
         os.makedirs('models', exist_ok=True)
-        
-        # Railway環境では/tmpディレクトリも作成
-        if os.environ.get('RAILWAY_ENVIRONMENT'):
-            os.makedirs('/tmp', exist_ok=True)
     
     return app

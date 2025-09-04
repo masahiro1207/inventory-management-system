@@ -447,16 +447,19 @@
         top: 20px;
         right: 20px;
         z-index: 1000;
-        max-width: 400px;
+        max-width: 300px;
       }
 
       .alert {
         background: var(--dark-card);
         border: 1px solid var(--border-color);
-        border-radius: 15px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         backdrop-filter: blur(10px);
         color: var(--text-primary);
+        font-size: 0.9rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
       }
     </style>
   </head>
@@ -627,7 +630,7 @@
         loadDealers();
         loadCategories();
         loadAlerts();
-        setInterval(loadAlerts, 30000); // 30秒ごとにアラート更新
+        setInterval(loadAlerts, 60000); // 60秒ごとにアラート更新
       });
 
       // 取引会社一覧の読み込み
@@ -690,8 +693,8 @@
           .then((data) => {
             if (data.success) {
               allAlerts = data.alerts;
-              displayAlerts(allAlerts);
-              updateStats(allAlerts);
+              // フィルタとソートを適用
+              filterAlerts();
             } else {
               showAlert("warning", data.error);
             }
@@ -867,33 +870,51 @@
       // アラートのソート
       function sortAlerts(alerts, sortType) {
         const sortedAlerts = [...alerts];
-        
+
         switch (sortType) {
           case "shortage-desc":
             return sortedAlerts.sort((a, b) => b.shortage - a.shortage);
           case "shortage-asc":
             return sortedAlerts.sort((a, b) => a.shortage - b.shortage);
           case "product-asc":
-            return sortedAlerts.sort((a, b) => a.product_name.localeCompare(b.product_name, 'ja'));
+            return sortedAlerts.sort((a, b) =>
+              a.product_name.localeCompare(b.product_name, "ja")
+            );
           case "product-desc":
-            return sortedAlerts.sort((a, b) => b.product_name.localeCompare(a.product_name, 'ja'));
+            return sortedAlerts.sort((a, b) =>
+              b.product_name.localeCompare(a.product_name, "ja")
+            );
           case "manufacturer-asc":
-            return sortedAlerts.sort((a, b) => a.manufacturer.localeCompare(b.manufacturer, 'ja'));
+            return sortedAlerts.sort((a, b) =>
+              a.manufacturer.localeCompare(b.manufacturer, "ja")
+            );
           case "manufacturer-desc":
-            return sortedAlerts.sort((a, b) => b.manufacturer.localeCompare(a.manufacturer, 'ja'));
+            return sortedAlerts.sort((a, b) =>
+              b.manufacturer.localeCompare(a.manufacturer, "ja")
+            );
           case "dealer-asc":
-            return sortedAlerts.sort((a, b) => (a.dealer || "").localeCompare(b.dealer || "", 'ja'));
+            return sortedAlerts.sort((a, b) =>
+              (a.dealer || "").localeCompare(b.dealer || "", "ja")
+            );
           case "dealer-desc":
-            return sortedAlerts.sort((a, b) => (b.dealer || "").localeCompare(a.dealer || "", 'ja'));
+            return sortedAlerts.sort((a, b) =>
+              (b.dealer || "").localeCompare(a.dealer || "", "ja")
+            );
           case "urgency-desc":
             return sortedAlerts.sort((a, b) => {
               const urgencyOrder = { high: 3, medium: 2, low: 1 };
-              return urgencyOrder[getUrgencyLevel(b.shortage)] - urgencyOrder[getUrgencyLevel(a.shortage)];
+              return (
+                urgencyOrder[getUrgencyLevel(b.shortage)] -
+                urgencyOrder[getUrgencyLevel(a.shortage)]
+              );
             });
           case "urgency-asc":
             return sortedAlerts.sort((a, b) => {
               const urgencyOrder = { high: 3, medium: 2, low: 1 };
-              return urgencyOrder[getUrgencyLevel(a.shortage)] - urgencyOrder[getUrgencyLevel(b.shortage)];
+              return (
+                urgencyOrder[getUrgencyLevel(a.shortage)] -
+                urgencyOrder[getUrgencyLevel(b.shortage)]
+              );
             });
           default:
             return sortedAlerts;
@@ -906,12 +927,12 @@
         document.getElementById("categoryFilter").value = "";
         document.getElementById("urgencyFilter").value = "";
         document.getElementById("sortFilter").value = "shortage-desc";
-        
+
         currentDealer = "";
         currentCategory = "";
         currentUrgency = "";
         currentSort = "shortage-desc";
-        
+
         displayAlerts(allAlerts);
         updateStats(allAlerts);
       }

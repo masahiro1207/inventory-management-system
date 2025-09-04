@@ -299,16 +299,19 @@
         bottom: 20px;
         right: 20px;
         z-index: 1000;
-        max-width: 400px;
+        max-width: 300px;
       }
 
       .alert {
         background: var(--dark-card);
         border: 1px solid var(--border-color);
-        border-radius: 15px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         backdrop-filter: blur(10px);
         color: var(--text-primary);
+        font-size: 0.9rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
       }
 
       .recommendation-card {
@@ -2144,6 +2147,9 @@
 
       // 在庫調整（プラス・マイナスボタン）
       function adjustStock(productId, adjustment) {
+        // 即座にUIを更新（楽観的更新）
+        updateStockDisplay(productId, adjustment);
+        
         fetch(`/api/products/${productId}/stock`, {
           method: "POST",
           headers: {
@@ -2157,15 +2163,64 @@
           .then((response) => response.json())
           .then((data) => {
             if (data.success) {
+              // 成功時は何もしない（既にUIは更新済み）
               showAlert("success", data.message);
-              loadInventory();
             } else {
+              // 失敗時は元に戻す
+              updateStockDisplay(productId, -adjustment);
               showAlert("danger", data.error);
             }
           })
           .catch((error) => {
+            // エラー時は元に戻す
+            updateStockDisplay(productId, -adjustment);
             showAlert("danger", "在庫調整エラー: " + error);
           });
+      }
+
+      // 在庫表示の即座更新
+      function updateStockDisplay(productId, adjustment) {
+        // デスクトップ用テーブルの更新
+        const rows = document.querySelectorAll('#inventoryTableBody tr');
+        rows.forEach(row => {
+          const stockDisplay = row.querySelector('.stock-display');
+          const minQuantityDisplay = row.querySelector('.min-quantity-display');
+          const adjustButtons = row.querySelectorAll(`button[onclick*="adjustStock(${productId}"]`);
+          
+          if (adjustButtons.length > 0 && stockDisplay && minQuantityDisplay) {
+            const currentStock = parseInt(stockDisplay.textContent);
+            const newStock = Math.max(0, currentStock + adjustment);
+            stockDisplay.textContent = newStock;
+            
+            // 在庫状態のクラスを更新
+            const minQuantity = parseInt(minQuantityDisplay.textContent);
+            if (newStock < minQuantity) {
+              stockDisplay.className = 'stock-display stock-low';
+            } else {
+              stockDisplay.className = 'stock-display stock-ok';
+            }
+          }
+        });
+
+        // モバイル用カードの更新
+        const mobileCards = document.querySelectorAll('#mobileInventoryList .mobile-inventory-card');
+        mobileCards.forEach(card => {
+          const adjustButtons = card.querySelectorAll(`button[onclick*="adjustStock(${productId}"]`);
+          const stockDisplay = card.querySelector('.mobile-stock-display');
+          
+          if (adjustButtons.length > 0 && stockDisplay) {
+            const currentStock = parseInt(stockDisplay.textContent);
+            const newStock = Math.max(0, currentStock + adjustment);
+            stockDisplay.textContent = newStock;
+            
+            // 在庫状態のクラスを更新（簡易的な判定）
+            if (newStock < 5) {
+              stockDisplay.className = 'mobile-stock-display stock-low';
+            } else {
+              stockDisplay.className = 'mobile-stock-display stock-ok';
+            }
+          }
+        });
       }
 
       // 最低必要数のインライン編集を開始

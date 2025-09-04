@@ -957,26 +957,39 @@
 
         let url = "/api/pdf/export";
         const params = new URLSearchParams();
-        
+
         if (currentDealer) {
-          params.append('dealer', currentDealer);
+          params.append("dealer", currentDealer);
         }
-        
+
         // 現在のソート設定を取得
         const sortFilter = document.getElementById("sortFilter").value;
-        let sortBy = 'product_name';
-        let sortOrder = 'asc';
-        
+        let sortBy = "product_name";
+        let sortOrder = "asc";
+
         // ソートフィルタからソート設定を解析
-        if (sortFilter.includes('-')) {
-          const [field, order] = sortFilter.split('-');
-          sortBy = field;
+        if (sortFilter.includes("-")) {
+          const [field, order] = sortFilter.split("-");
+          
+          // フィールド名のマッピング
+          if (field === "product") {
+            sortBy = "product_name";
+          } else if (field === "manufacturer") {
+            sortBy = "manufacturer";
+          } else if (field === "dealer") {
+            sortBy = "dealer";
+          } else if (field === "shortage") {
+            sortBy = "shortage";
+          } else {
+            sortBy = field;
+          }
+          
           sortOrder = order;
         }
-        
-        params.append('sort_by', sortBy);
-        params.append('sort_order', sortOrder);
-        
+
+        params.append("sort_by", sortBy);
+        params.append("sort_order", sortOrder);
+
         if (params.toString()) {
           url += `?${params.toString()}`;
         }

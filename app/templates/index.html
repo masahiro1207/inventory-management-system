@@ -2591,17 +2591,17 @@
 
         let url = "/api/pdf/export";
         const params = new URLSearchParams();
-        
+
         if (currentDealer) {
-          params.append('dealer', currentDealer);
+          params.append("dealer", currentDealer);
         }
-        
+
         // 現在のソート設定を取得
         const sortBy = document.getElementById("sortBy").value;
         const sortOrder = document.getElementById("sortOrder").value;
-        params.append('sort_by', sortBy);
-        params.append('sort_order', sortOrder);
-        
+        params.append("sort_by", sortBy);
+        params.append("sort_order", sortOrder);
+
         if (params.toString()) {
           url += `?${params.toString()}`;
         }

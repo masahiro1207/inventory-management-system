@@ -22,11 +22,18 @@ class PDFService:
                 query = query.filter(Product.dealer == dealer)
             
             # ソートを適用
-            if hasattr(Product, sort_by):
+            if sort_by == 'shortage':
+                # 不足数は計算値なので、min_quantity - current_stockでソート
                 if sort_order == 'desc':
-                    query = query.order_by(db.desc(getattr(Product, sort_by)))
+                    query = query.order_by((Product.min_quantity - Product.current_stock).desc())
                 else:
-                    query = query.order_by(db.asc(getattr(Product, sort_by)))
+                    query = query.order_by((Product.min_quantity - Product.current_stock).asc())
+            elif hasattr(Product, sort_by):
+                column = getattr(Product, sort_by)
+                if sort_order == 'desc':
+                    query = query.order_by(column.desc())
+                else:
+                    query = query.order_by(column.asc())
             
             products = query.all()
             

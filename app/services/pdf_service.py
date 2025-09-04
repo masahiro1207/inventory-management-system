@@ -13,13 +13,20 @@ from datetime import datetime
 
 class PDFService:
     @staticmethod
-    def export_inventory_pdf(dealer=''):
+    def export_inventory_pdf(dealer='', sort_by='product_name', sort_order='asc'):
         """在庫不足商品のみをPDF形式でエクスポート"""
         try:
             # 在庫不足商品のみを取得
             query = Product.query.filter(Product.current_stock < Product.min_quantity)
             if dealer:
                 query = query.filter(Product.dealer == dealer)
+            
+            # ソートを適用
+            if hasattr(Product, sort_by):
+                if sort_order == 'desc':
+                    query = query.order_by(db.desc(getattr(Product, sort_by)))
+                else:
+                    query = query.order_by(db.asc(getattr(Product, sort_by)))
             
             products = query.all()
             

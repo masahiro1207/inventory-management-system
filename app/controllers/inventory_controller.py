@@ -574,7 +574,9 @@ def export_pdf():
     """在庫データのPDFエクスポート"""
     try:
         dealer = request.args.get('dealer', '')
-        success, result = pdf_service.export_inventory_pdf(dealer)
+        sort_by = request.args.get('sort_by', 'product_name')
+        sort_order = request.args.get('sort_order', 'asc')
+        success, result = pdf_service.export_inventory_pdf(dealer, sort_by, sort_order)
         if success:
             # ファイル名を生成
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')

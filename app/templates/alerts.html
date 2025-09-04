@@ -956,14 +956,35 @@
         btn.innerHTML = '<span class="loading-spinner me-2"></span>出力中...';
 
         let url = "/api/pdf/export";
+        const params = new URLSearchParams();
+        
         if (currentDealer) {
-          url += `?dealer=${encodeURIComponent(currentDealer)}`;
+          params.append('dealer', currentDealer);
+        }
+        
+        // 現在のソート設定を取得
+        const sortFilter = document.getElementById("sortFilter").value;
+        let sortBy = 'product_name';
+        let sortOrder = 'asc';
+        
+        // ソートフィルタからソート設定を解析
+        if (sortFilter.includes('-')) {
+          const [field, order] = sortFilter.split('-');
+          sortBy = field;
+          sortOrder = order;
+        }
+        
+        params.append('sort_by', sortBy);
+        params.append('sort_order', sortOrder);
+        
+        if (params.toString()) {
+          url += `?${params.toString()}`;
         }
 
         // ファイルダウンロード用のリンクを作成
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = url;
-        link.download = '';
+        link.download = "";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

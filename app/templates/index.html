@@ -2149,7 +2149,7 @@
       function adjustStock(productId, adjustment) {
         // 即座にUIを更新（楽観的更新）
         updateStockDisplay(productId, adjustment);
-        
+
         fetch(`/api/products/${productId}/stock`, {
           method: "POST",
           headers: {
@@ -2181,43 +2181,49 @@
       // 在庫表示の即座更新
       function updateStockDisplay(productId, adjustment) {
         // デスクトップ用テーブルの更新
-        const rows = document.querySelectorAll('#inventoryTableBody tr');
-        rows.forEach(row => {
-          const stockDisplay = row.querySelector('.stock-display');
-          const minQuantityDisplay = row.querySelector('.min-quantity-display');
-          const adjustButtons = row.querySelectorAll(`button[onclick*="adjustStock(${productId}"]`);
-          
+        const rows = document.querySelectorAll("#inventoryTableBody tr");
+        rows.forEach((row) => {
+          const stockDisplay = row.querySelector(".stock-display");
+          const minQuantityDisplay = row.querySelector(".min-quantity-display");
+          const adjustButtons = row.querySelectorAll(
+            `button[onclick*="adjustStock(${productId}"]`
+          );
+
           if (adjustButtons.length > 0 && stockDisplay && minQuantityDisplay) {
             const currentStock = parseInt(stockDisplay.textContent);
             const newStock = Math.max(0, currentStock + adjustment);
             stockDisplay.textContent = newStock;
-            
+
             // 在庫状態のクラスを更新
             const minQuantity = parseInt(minQuantityDisplay.textContent);
             if (newStock < minQuantity) {
-              stockDisplay.className = 'stock-display stock-low';
+              stockDisplay.className = "stock-display stock-low";
             } else {
-              stockDisplay.className = 'stock-display stock-ok';
+              stockDisplay.className = "stock-display stock-ok";
             }
           }
         });
 
         // モバイル用カードの更新
-        const mobileCards = document.querySelectorAll('#mobileInventoryList .mobile-inventory-card');
-        mobileCards.forEach(card => {
-          const adjustButtons = card.querySelectorAll(`button[onclick*="adjustStock(${productId}"]`);
-          const stockDisplay = card.querySelector('.mobile-stock-display');
-          
+        const mobileCards = document.querySelectorAll(
+          "#mobileInventoryList .mobile-inventory-card"
+        );
+        mobileCards.forEach((card) => {
+          const adjustButtons = card.querySelectorAll(
+            `button[onclick*="adjustStock(${productId}"]`
+          );
+          const stockDisplay = card.querySelector(".mobile-stock-display");
+
           if (adjustButtons.length > 0 && stockDisplay) {
             const currentStock = parseInt(stockDisplay.textContent);
             const newStock = Math.max(0, currentStock + adjustment);
             stockDisplay.textContent = newStock;
-            
+
             // 在庫状態のクラスを更新（簡易的な判定）
             if (newStock < 5) {
-              stockDisplay.className = 'mobile-stock-display stock-low';
+              stockDisplay.className = "mobile-stock-display stock-low";
             } else {
-              stockDisplay.className = 'mobile-stock-display stock-ok';
+              stockDisplay.className = "mobile-stock-display stock-ok";
             }
           }
         });

@@ -808,11 +808,13 @@ def get_alerts():
         for product in low_stock_products:
             alerts.append({
                 'type': 'low_stock',
+                'product_id': product.id,
                 'product_name': product.product_name,
                 'manufacturer': product.manufacturer,
                 'current_stock': product.current_stock,
                 'min_quantity': product.min_quantity,
                 'shortage': product.min_quantity - product.current_stock,
+                'category': product.category,
                 'dealer': product.dealer
             })
         

@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, render_template
+from flask import Blueprint, request, jsonify, render_template, send_file
 from app.models.inventory import Product, OrderHistory
 from app.services.csv_service import CSVService
 from app.services.ml_service import MLService
@@ -576,7 +576,17 @@ def export_pdf():
         dealer = request.args.get('dealer', '')
         success, result = pdf_service.export_inventory_pdf(dealer)
         if success:
-            return jsonify({'success': True, 'file_path': result})
+            # ファイル名を生成
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            dealer_suffix = f"_{dealer}" if dealer else ""
+            filename = f"在庫レポート{dealer_suffix}_{timestamp}.pdf"
+            
+            return send_file(
+                result,
+                as_attachment=True,
+                download_name=filename,
+                mimetype='application/pdf'
+            )
         else:
             return jsonify({'success': False, 'error': result}), 400
     except Exception as e:

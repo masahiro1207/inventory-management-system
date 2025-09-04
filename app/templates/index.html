@@ -2594,22 +2594,20 @@
           url += `?dealer=${encodeURIComponent(currentDealer)}`;
         }
 
-        fetch(url)
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.success) {
-              showAlert("success", "PDFエクスポートが完了しました");
-            } else {
-              showAlert("danger", data.error);
-            }
-          })
-          .catch((error) => {
-            showAlert("danger", "エクスポートエラー: " + error);
-          })
-          .finally(() => {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-file-pdf me-1"></i>PDF出力';
-          });
+        // ファイルダウンロード用のリンクを作成
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = '';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // ボタンを元に戻す
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-file-pdf me-1"></i>PDF出力';
+          showAlert("success", "PDFダウンロードを開始しました");
+        }, 1000);
       }
 
       // アラート表示

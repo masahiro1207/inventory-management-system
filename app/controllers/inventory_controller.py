@@ -1,15 +1,22 @@
 from flask import Blueprint, request, jsonify, render_template, send_file
 from app.models.inventory import Product, OrderHistory
 from app.services.csv_service import CSVService
-from app.services.ml_service import MLService
 from app.services.pdf_service import PDFService
 from app import db
 from datetime import datetime
 import os
 
+# 機械学習機能を条件付きでインポート
+try:
+    from app.services.ml_service import MLService
+    ml_service = MLService()
+    ML_AVAILABLE = True
+except ImportError:
+    ml_service = None
+    ML_AVAILABLE = False
+
 inventory_bp = Blueprint('inventory', __name__)
 csv_service = CSVService()
-ml_service = MLService()
 pdf_service = PDFService()
 
 @inventory_bp.route('/')
@@ -769,6 +776,8 @@ def bulk_delete_products():
 @inventory_bp.route('/api/ml/train', methods=['POST'])
 def train_ml_model():
     """機械学習モデルの訓練"""
+    if not ML_AVAILABLE:
+        return jsonify({'success': False, 'error': '機械学習機能は利用できません'}), 503
     try:
         success, message = ml_service.train_model()
         if success:
@@ -781,6 +790,8 @@ def train_ml_model():
 @inventory_bp.route('/api/ml/recommendations', methods=['GET'])
 def get_recommendations():
     """注文推奨の取得"""
+    if not ML_AVAILABLE:
+        return jsonify({'success': False, 'error': '機械学習機能は利用できません'}), 503
     try:
         dealer = request.args.get('dealer', '')
         success, recommendations = ml_service.get_order_recommendations(dealer)

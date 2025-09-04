@@ -970,7 +970,7 @@
         // ソートフィルタからソート設定を解析
         if (sortFilter.includes("-")) {
           const [field, order] = sortFilter.split("-");
-          
+
           // フィールド名のマッピング
           if (field === "product") {
             sortBy = "product_name";
@@ -983,7 +983,7 @@
           } else {
             sortBy = field;
           }
-          
+
           sortOrder = order;
         }
 

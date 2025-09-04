@@ -1,4 +1,5 @@
 import os
+import io
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -40,15 +41,11 @@ class PDFService:
             if not products:
                 return False, "在庫不足の商品はありません"
             
-            # PDFファイル名
-            dealer_suffix = f"_{dealer}" if dealer else ""
-            export_path = os.path.join('reports', f'low_stock_report{dealer_suffix}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf')
+            # メモリ上でPDFを生成
+            buffer = io.BytesIO()
             
-            # ディレクトリ作成
-            os.makedirs('reports', exist_ok=True)
-            
-            # PDFドキュメント作成
-            doc = SimpleDocTemplate(export_path, pagesize=landscape(A4))
+            # PDFドキュメント作成（メモリ上）
+            doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
             story = []
             
             # 日本語フォントの設定
@@ -146,7 +143,10 @@ class PDFService:
             # PDF生成
             doc.build(story)
             
-            return True, export_path
+            # バッファの位置を先頭に戻す
+            buffer.seek(0)
+            
+            return True, buffer
             
         except Exception as e:
             return False, f"PDFエクスポートエラー: {str(e)}"
@@ -165,15 +165,11 @@ class PDFService:
             if not low_stock_products:
                 return False, "在庫不足の商品はありません"
             
-            # PDFファイル名
-            dealer_suffix = f"_{dealer}" if dealer else ""
-            export_path = os.path.join('reports', f'alerts_report{dealer_suffix}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf')
+            # メモリ上でPDFを生成
+            buffer = io.BytesIO()
             
-            # ディレクトリ作成
-            os.makedirs('reports', exist_ok=True)
-            
-            # PDFドキュメント作成
-            doc = SimpleDocTemplate(export_path, pagesize=A4)
+            # PDFドキュメント作成（メモリ上）
+            doc = SimpleDocTemplate(buffer, pagesize=A4)
             story = []
             
             # 日本語フォントの設定
@@ -254,7 +250,10 @@ class PDFService:
             # PDF生成
             doc.build(story)
             
-            return True, export_path
+            # バッファの位置を先頭に戻す
+            buffer.seek(0)
+            
+            return True, buffer
             
         except Exception as e:
             return False, f"アラートPDFエクスポートエラー: {str(e)}"

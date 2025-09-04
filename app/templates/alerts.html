@@ -513,7 +513,7 @@
       <!-- フィルタ・コントロール -->
       <div class="filter-controls mb-4">
         <div class="row">
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label">取引会社フィルタ</label>
             <select
               class="form-select dealer-filter"
@@ -523,7 +523,17 @@
               <option value="">全ての取引会社</option>
             </select>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
+            <label class="form-label">カテゴリフィルタ</label>
+            <select
+              class="form-select"
+              id="categoryFilter"
+              onchange="filterAlerts()"
+            >
+              <option value="">全てのカテゴリ</option>
+            </select>
+          </div>
+          <div class="col-md-3">
             <label class="form-label">緊急度フィルタ</label>
             <select
               class="form-select"
@@ -536,9 +546,30 @@
               <option value="low">低緊急度</option>
             </select>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
+            <label class="form-label">ソート順</label>
+            <select
+              class="form-select"
+              id="sortFilter"
+              onchange="filterAlerts()"
+            >
+              <option value="shortage-desc">不足数（多い順）</option>
+              <option value="shortage-asc">不足数（少ない順）</option>
+              <option value="product-asc">商品名（あいうえお順）</option>
+              <option value="product-desc">商品名（逆順）</option>
+              <option value="manufacturer-asc">メーカー（あいうえお順）</option>
+              <option value="manufacturer-desc">メーカー（逆順）</option>
+              <option value="dealer-asc">取引先（あいうえお順）</option>
+              <option value="dealer-desc">取引先（逆順）</option>
+              <option value="urgency-desc">緊急度（高→低）</option>
+              <option value="urgency-asc">緊急度（低→高）</option>
+            </select>
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col-12">
             <label class="form-label">操作</label>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
               <button
                 class="btn btn-warning"
                 onclick="refreshAlerts()"
@@ -552,6 +583,13 @@
                 id="exportBtn"
               >
                 <i class="fas fa-file-pdf me-1"></i>PDF出力
+              </button>
+              <button
+                class="btn btn-info"
+                onclick="resetFilters()"
+                id="resetBtn"
+              >
+                <i class="fas fa-undo me-1"></i>フィルタリセット
               </button>
             </div>
           </div>
@@ -579,12 +617,15 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
       let currentDealer = "";
+      let currentCategory = "";
       let currentUrgency = "";
+      let currentSort = "shortage-desc";
       let allAlerts = [];
 
       // ページ読み込み時の初期化
       document.addEventListener("DOMContentLoaded", function () {
         loadDealers();
+        loadCategories();
         loadAlerts();
         setInterval(loadAlerts, 30000); // 30秒ごとにアラート更新
       });
@@ -608,6 +649,28 @@
           })
           .catch((error) => {
             console.error("取引会社読み込みエラー:", error);
+          });
+      }
+
+      // カテゴリ一覧の読み込み
+      function loadCategories() {
+        fetch("/api/categories")
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              const categoryFilter = document.getElementById("categoryFilter");
+
+              // 既存のオプションをクリア（「全てのカテゴリ」は保持）
+              categoryFilter.innerHTML =
+                '<option value="">全てのカテゴリ</option>';
+
+              data.categories.forEach((category) => {
+                categoryFilter.innerHTML += `<option value="${category}">${category}</option>`;
+              });
+            }
+          })
+          .catch((error) => {
+            console.error("カテゴリ読み込みエラー:", error);
           });
       }
 
@@ -690,6 +753,12 @@
                                 }個</div>
                             </div>
                             <div class="detail-item">
+                                <div class="detail-label">カテゴリ</div>
+                                <div class="detail-value">${
+                                  alert.category || "未分類"
+                                }</div>
+                            </div>
+                            <div class="detail-item">
                                 <div class="detail-label">取引先</div>
                                 <div class="detail-value">${
                                   alert.dealer || "未指定"
@@ -761,7 +830,9 @@
       // フィルタの適用
       function filterAlerts() {
         currentDealer = document.getElementById("dealerFilter").value;
+        currentCategory = document.getElementById("categoryFilter").value;
         currentUrgency = document.getElementById("urgencyFilter").value;
+        currentSort = document.getElementById("sortFilter").value;
 
         let filteredAlerts = allAlerts;
 
@@ -772,6 +843,13 @@
           );
         }
 
+        // カテゴリフィルタ
+        if (currentCategory) {
+          filteredAlerts = filteredAlerts.filter(
+            (alert) => alert.category === currentCategory
+          );
+        }
+
         // 緊急度フィルタ
         if (currentUrgency) {
           filteredAlerts = filteredAlerts.filter(
@@ -779,8 +857,63 @@
           );
         }
 
+        // ソートの適用
+        filteredAlerts = sortAlerts(filteredAlerts, currentSort);
+
         displayAlerts(filteredAlerts);
         updateStats(filteredAlerts);
+      }
+
+      // アラートのソート
+      function sortAlerts(alerts, sortType) {
+        const sortedAlerts = [...alerts];
+        
+        switch (sortType) {
+          case "shortage-desc":
+            return sortedAlerts.sort((a, b) => b.shortage - a.shortage);
+          case "shortage-asc":
+            return sortedAlerts.sort((a, b) => a.shortage - b.shortage);
+          case "product-asc":
+            return sortedAlerts.sort((a, b) => a.product_name.localeCompare(b.product_name, 'ja'));
+          case "product-desc":
+            return sortedAlerts.sort((a, b) => b.product_name.localeCompare(a.product_name, 'ja'));
+          case "manufacturer-asc":
+            return sortedAlerts.sort((a, b) => a.manufacturer.localeCompare(b.manufacturer, 'ja'));
+          case "manufacturer-desc":
+            return sortedAlerts.sort((a, b) => b.manufacturer.localeCompare(a.manufacturer, 'ja'));
+          case "dealer-asc":
+            return sortedAlerts.sort((a, b) => (a.dealer || "").localeCompare(b.dealer || "", 'ja'));
+          case "dealer-desc":
+            return sortedAlerts.sort((a, b) => (b.dealer || "").localeCompare(a.dealer || "", 'ja'));
+          case "urgency-desc":
+            return sortedAlerts.sort((a, b) => {
+              const urgencyOrder = { high: 3, medium: 2, low: 1 };
+              return urgencyOrder[getUrgencyLevel(b.shortage)] - urgencyOrder[getUrgencyLevel(a.shortage)];
+            });
+          case "urgency-asc":
+            return sortedAlerts.sort((a, b) => {
+              const urgencyOrder = { high: 3, medium: 2, low: 1 };
+              return urgencyOrder[getUrgencyLevel(a.shortage)] - urgencyOrder[getUrgencyLevel(b.shortage)];
+            });
+          default:
+            return sortedAlerts;
+        }
+      }
+
+      // フィルタのリセット
+      function resetFilters() {
+        document.getElementById("dealerFilter").value = "";
+        document.getElementById("categoryFilter").value = "";
+        document.getElementById("urgencyFilter").value = "";
+        document.getElementById("sortFilter").value = "shortage-desc";
+        
+        currentDealer = "";
+        currentCategory = "";
+        currentUrgency = "";
+        currentSort = "shortage-desc";
+        
+        displayAlerts(allAlerts);
+        updateStats(allAlerts);
       }
 
       // アラートの更新

@@ -1217,7 +1217,7 @@
               class="form-control"
               id="mobileSearchInput"
               placeholder="商品名で検索..."
-              oninput="searchProducts()"
+              oninput="searchMobileProducts()"
             />
           </div>
         </div>
@@ -1766,16 +1766,34 @@
         loadInventory();
       }
 
-      // 商品ソート
-      function sortProducts() {
+      // モバイル用検索（専用関数）
+      function searchMobileProducts() {
+        const mobileSearch = document.getElementById("mobileSearchInput");
+        const desktopSearch = document.getElementById("searchInput");
+        
+        if (mobileSearch && desktopSearch) {
+          desktopSearch.value = mobileSearch.value;
+        }
+        
         loadInventory();
       }
 
+
       // 在庫一覧の読み込み
       function loadInventory() {
-        const search = document.getElementById("searchInput").value;
-        const sortBy = document.getElementById("sortBy").value;
-        const sortOrder = document.getElementById("sortOrder").value;
+        // デスクトップとモバイルの検索入力を統合
+        const desktopSearch = document.getElementById("searchInput");
+        const mobileSearch = document.getElementById("mobileSearchInput");
+        const search = (desktopSearch ? desktopSearch.value : "") || (mobileSearch ? mobileSearch.value : "");
+        
+        // デスクトップとモバイルのソート設定を統合
+        const desktopSortBy = document.getElementById("sortBy");
+        const mobileSortBy = document.getElementById("mobileSortBy");
+        const sortBy = (desktopSortBy ? desktopSortBy.value : "") || (mobileSortBy ? mobileSortBy.value : "product_name");
+        
+        const desktopSortOrder = document.getElementById("sortOrder");
+        const mobileSortOrder = document.getElementById("mobileSortOrder");
+        const sortOrder = (desktopSortOrder ? desktopSortOrder.value : "") || (mobileSortOrder ? mobileSortOrder.value : "asc");
 
         let url = "/api/products?";
         if (search) url += `search=${encodeURIComponent(search)}&`;
@@ -1892,6 +1910,16 @@
         const container = document.getElementById("mobileInventoryList");
         container.innerHTML = "";
 
+        if (products.length === 0) {
+          container.innerHTML = `
+            <div class="text-center text-muted py-4">
+              <i class="fas fa-box-open fa-3x mb-3"></i>
+              <p>商品が見つかりませんでした</p>
+            </div>
+          `;
+          return;
+        }
+
         products.forEach((product) => {
           const card = document.createElement("div");
           card.className = "mobile-inventory-card fade-in";
@@ -1942,6 +1970,21 @@
 
         if (desktopSortBy) desktopSortBy.value = sortBy;
         if (desktopSortOrder) desktopSortOrder.value = sortOrder;
+
+        loadInventory();
+      }
+
+      // デスクトップ用ソート機能（モバイルとの同期）
+      function sortProducts() {
+        const sortBy = document.getElementById("sortBy").value;
+        const sortOrder = document.getElementById("sortOrder").value;
+
+        // モバイル用のソート設定も更新
+        const mobileSortBy = document.getElementById("mobileSortBy");
+        const mobileSortOrder = document.getElementById("mobileSortOrder");
+
+        if (mobileSortBy) mobileSortBy.value = sortBy;
+        if (mobileSortOrder) mobileSortOrder.value = sortOrder;
 
         loadInventory();
       }

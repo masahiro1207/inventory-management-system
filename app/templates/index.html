@@ -1194,6 +1194,7 @@
               <option value="unit_price">単価</option>
               <option value="current_stock">在庫数</option>
               <option value="min_quantity">最低必要数</option>
+              <option value="category">カテゴリ</option>
             </select>
           </div>
           <div class="col-md-3">
@@ -1749,6 +1750,23 @@
         loadInventory();
       }
 
+      // 全角・半角を統一する関数
+      function normalizeText(text) {
+        if (!text) return "";
+        return text
+          .replace(/[０-９]/g, (s) =>
+            String.fromCharCode(s.charCodeAt(0) - 0xfee0)
+          )
+          .replace(/[Ａ-Ｚａ-ｚ]/g, (s) =>
+            String.fromCharCode(s.charCodeAt(0) - 0xfee0)
+          )
+          .replace(/　/g, " ")
+          .replace(/[！-～]/g, (s) =>
+            String.fromCharCode(s.charCodeAt(0) - 0xfee0)
+          )
+          .toLowerCase();
+      }
+
       // 商品検索
       function searchProducts() {
         // モバイルとデスクトップの検索入力を同期
@@ -1770,48 +1788,123 @@
       function searchMobileProducts() {
         const mobileSearch = document.getElementById("mobileSearchInput");
         const desktopSearch = document.getElementById("searchInput");
-        
+
         if (mobileSearch && desktopSearch) {
           desktopSearch.value = mobileSearch.value;
         }
-        
+
         loadInventory();
       }
-
 
       // 在庫一覧の読み込み
       function loadInventory() {
         // デスクトップとモバイルの検索入力を統合
         const desktopSearch = document.getElementById("searchInput");
         const mobileSearch = document.getElementById("mobileSearchInput");
-        const search = (desktopSearch ? desktopSearch.value : "") || (mobileSearch ? mobileSearch.value : "");
-        
+        const search =
+          (desktopSearch ? desktopSearch.value : "") ||
+          (mobileSearch ? mobileSearch.value : "");
+
         // デスクトップとモバイルのソート設定を統合
         const desktopSortBy = document.getElementById("sortBy");
         const mobileSortBy = document.getElementById("mobileSortBy");
-        const sortBy = (desktopSortBy ? desktopSortBy.value : "") || (mobileSortBy ? mobileSortBy.value : "product_name");
-        
+        const sortBy =
+          (desktopSortBy ? desktopSortBy.value : "") ||
+          (mobileSortBy ? mobileSortBy.value : "product_name");
+
         const desktopSortOrder = document.getElementById("sortOrder");
         const mobileSortOrder = document.getElementById("mobileSortOrder");
-        const sortOrder = (desktopSortOrder ? desktopSortOrder.value : "") || (mobileSortOrder ? mobileSortOrder.value : "asc");
+        const sortOrder =
+          (desktopSortOrder ? desktopSortOrder.value : "") ||
+          (mobileSortOrder ? mobileSortOrder.value : "asc");
 
         let url = "/api/products?";
-        if (search) url += `search=${encodeURIComponent(search)}&`;
         if (currentDealer)
           url += `dealer=${encodeURIComponent(currentDealer)}&`;
-        url += `sort_by=${sortBy}&sort_order=${sortOrder}`;
 
         fetch(url)
           .then((response) => response.json())
           .then((products) => {
+            // 検索フィルタリング（全角・半角を区別しない）
+            let filteredProducts = products;
+            if (search) {
+              const normalizedSearch = normalizeText(search);
+              filteredProducts = products.filter((product) => {
+                const normalizedProductName = normalizeText(
+                  product.product_name || ""
+                );
+                const normalizedManufacturer = normalizeText(
+                  product.manufacturer || ""
+                );
+                const normalizedCategory = normalizeText(
+                  product.category || ""
+                );
+                const normalizedDealer = normalizeText(product.dealer || "");
+
+                return (
+                  normalizedProductName.includes(normalizedSearch) ||
+                  normalizedManufacturer.includes(normalizedSearch) ||
+                  normalizedCategory.includes(normalizedSearch) ||
+                  normalizedDealer.includes(normalizedSearch)
+                );
+              });
+            }
+
+            // ソート機能（フロントエンドで実装）
+            filteredProducts.sort((a, b) => {
+              let aValue, bValue;
+
+              switch (sortBy) {
+                case "product_name":
+                  aValue = a.product_name || "";
+                  bValue = b.product_name || "";
+                  break;
+                case "manufacturer":
+                  aValue = a.manufacturer || "";
+                  bValue = b.manufacturer || "";
+                  break;
+                case "unit_price":
+                  aValue = parseFloat(a.unit_price) || 0;
+                  bValue = parseFloat(b.unit_price) || 0;
+                  break;
+                case "current_stock":
+                  aValue = parseInt(a.current_stock) || 0;
+                  bValue = parseInt(b.current_stock) || 0;
+                  break;
+                case "min_quantity":
+                  aValue = parseInt(a.min_quantity) || 0;
+                  bValue = parseInt(b.min_quantity) || 0;
+                  break;
+                case "category":
+                  aValue = a.category || "";
+                  bValue = b.category || "";
+                  break;
+                default:
+                  aValue = a.product_name || "";
+                  bValue = b.product_name || "";
+              }
+
+              // 文字列の場合は正規化して比較
+              if (typeof aValue === "string" && typeof bValue === "string") {
+                aValue = normalizeText(aValue);
+                bValue = normalizeText(bValue);
+              }
+
+              if (sortOrder === "desc") {
+                return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+              } else {
+                return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+              }
+            });
+
             // デスクトップ用テーブルの更新
-            updateDesktopTable(products);
+            updateDesktopTable(filteredProducts);
 
             // モバイル用テーブルの更新
-            updateMobileTable(products);
+            updateMobileTable(filteredProducts);
 
             // 統計情報を更新
-            updateStats(products);
+            updateStats(filteredProducts);
           })
           .catch((error) => {
             showAlert("danger", "在庫データの読み込みエラー: " + error);

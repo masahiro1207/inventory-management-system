@@ -115,7 +115,7 @@ class CSVService:
                 manufacturer = str(row[actual_columns['manufacturer']]).strip()
                 product_name = str(row[actual_columns['product_name']]).strip()
                 unit_price = float(row[actual_columns['unit_price']])
-                quantity = int(row[actual_columns['quantity']) if pd.notna(row[actual_columns['quantity']]) else 0
+                quantity = int(row[actual_columns['quantity']]) if pd.notna(row[actual_columns['quantity']]) else 0
                 
                 # 正規化されたキーで既存商品を検索
                 normalized_manufacturer = normalize_text(manufacturer)

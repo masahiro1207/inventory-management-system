@@ -14,11 +14,11 @@ def create_app():
     # データベース設定（本番環境では環境変数から取得）
     database_url = os.environ.get('DATABASE_URL') or os.environ.get('DATABASE_PUBLIC_URL', 'sqlite:///inventory.db')
     
-    # PostgreSQLのURLを修正
+    # PostgreSQLのURLを修正（HerokuやRailwayの古いURLフォーマット対応）
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     
-    # 本番環境ではPostgreSQLのみ使用（SQLiteを完全に無効化）
+    # 本番環境の検証（Railway環境の場合のみPostgreSQL必須）
     if os.environ.get('RAILWAY_ENVIRONMENT'):
         # デバッグ情報を出力
         print(f"DEBUG: RAILWAY_ENVIRONMENT = {os.environ.get('RAILWAY_ENVIRONMENT')}")
@@ -28,6 +28,13 @@ def create_app():
         
         if not database_url.startswith('postgresql://'):
             raise ValueError("PostgreSQL database is required in Railway environment. Please add a PostgreSQL database to your Railway project.")
+    
+    # Render環境の検出と情報出力
+    if os.environ.get('RENDER'):
+        print(f"INFO: Running on Render.com")
+        print(f"INFO: Database URL = {database_url}")
+        if database_url.startswith('sqlite'):
+            print("WARNING: Using SQLite on Render - data may be lost on redeploy!")
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

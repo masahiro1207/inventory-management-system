@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: inventory-management-system
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn run:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+      - key: DATABASE_URL
+        value: sqlite:///inventory.db
+    # 無料プランの場合、非アクティブ時にスリープします
+    # アクセスがあると自動的に起動します（初回アクセス時に数秒かかる場合があります）

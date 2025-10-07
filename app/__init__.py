@@ -18,7 +18,7 @@ def create_app():
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     
-    # 本番環境の検証（Railway環境の場合のみPostgreSQL必須）
+    # 本番環境の検証（Railway環境の場合）
     if os.environ.get('RAILWAY_ENVIRONMENT'):
         # デバッグ情報を出力
         print(f"DEBUG: RAILWAY_ENVIRONMENT = {os.environ.get('RAILWAY_ENVIRONMENT')}")
@@ -26,8 +26,14 @@ def create_app():
         print(f"DEBUG: DATABASE_PUBLIC_URL = {os.environ.get('DATABASE_PUBLIC_URL')}")
         print(f"DEBUG: Final database_url = {database_url}")
         
+        # PostgreSQLが推奨だが、SQLiteでも動作可能にする
         if not database_url.startswith('postgresql://'):
-            raise ValueError("PostgreSQL database is required in Railway environment. Please add a PostgreSQL database to your Railway project.")
+            print("WARNING: Using SQLite on Railway - PostgreSQL is recommended for production!")
+            # SQLiteの場合、データディレクトリを確実に作成
+            if database_url.startswith('sqlite'):
+                db_dir = os.path.dirname(database_url.replace('sqlite:///', ''))
+                if db_dir:
+                    os.makedirs(db_dir, exist_ok=True)
     
     # Render環境の検出と情報出力
     if os.environ.get('RENDER'):

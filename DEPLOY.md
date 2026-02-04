@@ -9,13 +9,15 @@
 1. **Railway にアクセス**  
    https://railway.app にアクセスし、**GitHub でサインアップ/ログイン**します。
 
-2. **新規プロジェクトで GitHub を連携**  
-   - **「New Project」** をクリック  
-   - **「Deploy from GitHub repo」** を選択  
+2. **新規プロジェクトで GitHub を連携**
+
+   - **「New Project」** をクリック
+   - **「Deploy from GitHub repo」** を選択
    - **「inventory-management-system」** リポジトリを選択（まだなら「Configure GitHub App」でリポジトリを許可）
 
-3. **サービスが自動作成**  
-   - リポジトリを選ぶと、Railway が `railway.toml` と `Procfile` を検出してビルド・デプロイを開始します。  
+3. **サービスが自動作成**
+
+   - リポジトリを選ぶと、Railway が `railway.toml` と `Procfile` を検出してビルド・デプロイを開始します。
    - 初回は **Root Directory** がリポジトリルートで問題ありません。
 
 4. **環境変数を設定（Settings → Variables）**  
@@ -25,15 +27,17 @@
    | `SECRET_KEY` | ランダムな文字列 | Flask の秘密鍵 |
    | `DATABASE_URL` | （PostgreSQL を追加した場合は自動） | 未設定なら SQLite で起動 |
 
-5. **PostgreSQL を使う場合（推奨）**  
-   - 同じプロジェクトで **「New」→「Database」→「PostgreSQL」** を追加  
-   - 追加すると `DATABASE_URL` が自動でサービスに渡されます。  
+5. **PostgreSQL を使う場合（推奨）**
+
+   - 同じプロジェクトで **「New」→「Database」→「PostgreSQL」** を追加
+   - 追加すると `DATABASE_URL` が自動でサービスに渡されます。
    - その場合、`requirements.txt` の `psycopg2-binary` のコメントを外してから再デプロイしてください。
 
-6. **公開 URL を有効化**  
+6. **公開 URL を有効化**
+
    - デプロイした **Web サービス** をクリック → **「Settings」** → **「Networking」** → **「Generate Domain」** で URL を発行します。
 
-7. **自動デプロイ**  
+7. **自動デプロイ**
    - GitHub と連携していれば、`main` にプッシュするたびに自動で再デプロイされます。
 
 ### ログの確認

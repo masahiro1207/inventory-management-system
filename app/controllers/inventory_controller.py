@@ -19,6 +19,11 @@ inventory_bp = Blueprint('inventory', __name__)
 csv_service = CSVService()
 pdf_service = PDFService()
 
+@inventory_bp.route('/health')
+def health():
+    """ヘルスチェック用（Railway等）。DBに依存しない軽量レスポンス"""
+    return jsonify({'status': 'ok'}), 200
+
 @inventory_bp.route('/')
 def index():
     """メインページ - 在庫一覧表示"""

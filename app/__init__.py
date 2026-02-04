@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import os
@@ -51,6 +51,11 @@ def create_app():
     
     # データベース初期化
     db.init_app(app)
+    
+    # ヘルスチェックを最初に登録（他インポートより前で、Railway等で確実に 200 を返す）
+    @app.route('/health')
+    def health():
+        return Response('ok', status=200, mimetype='text/plain')
     
     # ブループリントの登録
     from app.controllers.inventory_controller import inventory_bp

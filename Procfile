@@ -1,1 +1,1 @@
-web: gunicorn --bind 0.0.0.0:${PORT:-5000} run:app
+web: python start_gunicorn.py

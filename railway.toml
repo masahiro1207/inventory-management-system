@@ -1,0 +1,11 @@
+# Railway 本番デプロイ設定
+# https://docs.railway.app/reference/config-as-code
+
+[build]
+buildCommand = "pip install --upgrade pip && pip install -r requirements.txt"
+
+[deploy]
+startCommand = "gunicorn run:app"
+healthcheckPath = "/"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"

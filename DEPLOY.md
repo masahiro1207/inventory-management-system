@@ -1,27 +1,54 @@
 # 在庫管理システム デプロイガイド
 
-## ⚡ 今すぐ本番デプロイ（Render.com）
+## ⚡ 本番デプロイ（Railway）
 
-コードは GitHub にプッシュ済みです。以下の手順で Render にデプロイできます。
+このプロジェクトは **Railway** でのデプロイを想定しています。`railway.toml` と `Procfile` でビルド・起動が設定済みです。
 
-1. **Render.com にアクセス**  
-   https://render.com にアクセスし、**GitHub でサインアップ/ログイン**します。
+### 今すぐデプロイする手順
 
-2. **Blueprint でサービス作成**  
-   - ダッシュボードで **「New +」→「Blueprint」** を選択  
-   - **GitHub の「inventory-management-system」リポジトリ**を選択（まだなら「Connect account」で GitHub を連携）  
-   - `render.yaml` が検出されるので、**「Apply」** をクリック  
+1. **Railway にアクセス**  
+   https://railway.app にアクセスし、**GitHub でサインアップ/ログイン**します。
 
-3. **デプロイ完了**  
-   - ビルド・デプロイが自動で開始されます（5〜10 分程度）  
-   - 完了後、**「inventory-management-system」** の URL（例: `https://inventory-management-system.onrender.com`）でアクセスできます  
+2. **新規プロジェクトで GitHub を連携**  
+   - **「New Project」** をクリック  
+   - **「Deploy from GitHub repo」** を選択  
+   - **「inventory-management-system」** リポジトリを選択（まだなら「Configure GitHub App」でリポジトリを許可）
 
-4. **自動デプロイ**  
-   - デフォルトで「Auto-Deploy: Yes」のため、以降は `git push origin main` するたびに自動で再デプロイされます。
+3. **サービスが自動作成**  
+   - リポジトリを選ぶと、Railway が `railway.toml` と `Procfile` を検出してビルド・デプロイを開始します。  
+   - 初回は **Root Directory** がリポジトリルートで問題ありません。
+
+4. **環境変数を設定（Settings → Variables）**  
+   | 変数名 | 値 | 説明 |
+   |--------|-----|------|
+   | `FLASK_ENV` | `production` | 本番モード |
+   | `SECRET_KEY` | ランダムな文字列 | Flask の秘密鍵 |
+   | `DATABASE_URL` | （PostgreSQL を追加した場合は自動） | 未設定なら SQLite で起動 |
+
+5. **PostgreSQL を使う場合（推奨）**  
+   - 同じプロジェクトで **「New」→「Database」→「PostgreSQL」** を追加  
+   - 追加すると `DATABASE_URL` が自動でサービスに渡されます。  
+   - その場合、`requirements.txt` の `psycopg2-binary` のコメントを外してから再デプロイしてください。
+
+6. **公開 URL を有効化**  
+   - デプロイした **Web サービス** をクリック → **「Settings」** → **「Networking」** → **「Generate Domain」** で URL を発行します。
+
+7. **自動デプロイ**  
+   - GitHub と連携していれば、`main` にプッシュするたびに自動で再デプロイされます。
+
+### ログの確認
+
+```bash
+railway logs
+```
+
+（Railway CLI を入れている場合: `railway link` でプロジェクトを紐付けてから `railway logs`）
 
 ---
 
-## 🎯 推奨：Render.com（無料プラン）
+## Render.com（代替）
+
+Render を使う場合は以下を参照してください。`render.yaml` がリポジトリに含まれています。
 
 Render.com は無料で使えるプラットフォームで、クレジットカード登録不要です。
 

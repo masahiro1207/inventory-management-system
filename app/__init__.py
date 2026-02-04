@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import os
+import threading
 
 db = SQLAlchemy()
 
@@ -55,13 +56,18 @@ def create_app():
     from app.controllers.inventory_controller import inventory_bp
     app.register_blueprint(inventory_bp)
     
-    # データベーステーブルの作成
-    with app.app_context():
-        db.create_all()
-        
-        # 必要なディレクトリの作成
-        os.makedirs('uploads', exist_ok=True)
-        os.makedirs('reports', exist_ok=True)
-        os.makedirs('models', exist_ok=True)
+    # 起動をブロックしないよう、DB・ディレクトリ初期化はバックグラウンドで実行（/health がすぐ応答できるように）
+    def _init_db_and_dirs():
+        with app.app_context():
+            try:
+                db.create_all()
+                os.makedirs('uploads', exist_ok=True)
+                os.makedirs('reports', exist_ok=True)
+                os.makedirs('models', exist_ok=True)
+            except Exception as e:
+                import sys
+                print(f"WARNING: Startup init (DB/dirs) failed: {e}", file=sys.stderr)
+    t = threading.Thread(target=_init_db_and_dirs, daemon=True)
+    t.start()
     
     return app

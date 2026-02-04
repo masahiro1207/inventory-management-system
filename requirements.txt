@@ -8,4 +8,4 @@ python-dotenv==1.0.0
 flask-cors==4.0.0
 chardet==5.2.0
 gunicorn==21.2.0
-# 本番でPostgreSQLを使う場合のみ: psycopg2-binary==2.9.7
+psycopg2-binary==2.9.7

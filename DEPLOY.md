@@ -1,5 +1,26 @@
 # 在庫管理システム デプロイガイド
 
+## ⚡ 今すぐ本番デプロイ（Render.com）
+
+コードは GitHub にプッシュ済みです。以下の手順で Render にデプロイできます。
+
+1. **Render.com にアクセス**  
+   https://render.com にアクセスし、**GitHub でサインアップ/ログイン**します。
+
+2. **Blueprint でサービス作成**  
+   - ダッシュボードで **「New +」→「Blueprint」** を選択  
+   - **GitHub の「inventory-management-system」リポジトリ**を選択（まだなら「Connect account」で GitHub を連携）  
+   - `render.yaml` が検出されるので、**「Apply」** をクリック  
+
+3. **デプロイ完了**  
+   - ビルド・デプロイが自動で開始されます（5〜10 分程度）  
+   - 完了後、**「inventory-management-system」** の URL（例: `https://inventory-management-system.onrender.com`）でアクセスできます  
+
+4. **自動デプロイ**  
+   - デフォルトで「Auto-Deploy: Yes」のため、以降は `git push origin main` するたびに自動で再デプロイされます。
+
+---
+
 ## 🎯 推奨：Render.com（無料プラン）
 
 Render.com は無料で使えるプラットフォームで、クレジットカード登録不要です。

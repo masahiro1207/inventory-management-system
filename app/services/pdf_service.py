@@ -283,7 +283,7 @@ class PDFService:
                 return False, "対象の商品がありません"
 
             buffer = io.BytesIO()
-            doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+            doc = SimpleDocTemplate(buffer, pagesize=A4)  # 縦長
             story = []
 
             try:
@@ -304,7 +304,6 @@ class PDFService:
             title_text = "棚卸し表（在庫状況一覧）"
             if dealer:
                 title_text += f" - {dealer}"
-            title_text += f" ({datetime.now().strftime('%Y年%m月%d日 %H:%M')})"
             story.append(Paragraph(title_text, title_style))
             story.append(Spacer(1, 16))
 
@@ -324,7 +323,8 @@ class PDFService:
                 ])
             table_data.append(['', '', '', '合計', f'{total_amount:,.0f}'])
 
-            col_widths = [1.2*inch, 2.8*inch, 1.2*inch, 0.9*inch, 1.4*inch]
+            # 縦長A4に合わせた列幅
+            col_widths = [0.9*inch, 2.4*inch, 0.9*inch, 0.7*inch, 1.2*inch]
             tbl = Table(table_data, colWidths=col_widths)
             tbl.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2a2a2a')),

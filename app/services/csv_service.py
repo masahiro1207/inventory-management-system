@@ -100,11 +100,12 @@ class CSVService:
                     return ''
                 return text.replace('　', ' ').replace('０', '0').replace('１', '1').replace('２', '2').replace('３', '3').replace('４', '4').replace('５', '5').replace('６', '6').replace('７', '7').replace('８', '8').replace('９', '9').lower()
             
-            # 既存商品を事前に取得して正規化されたキーでマップ化
+            # 既存商品を事前に取得して正規化された商品名でマップ化（商品名のみで照合）
             existing_products = Product.query.all()
             existing_products_map = {}
             for product in existing_products:
-                key = f"{normalize_text(product.manufacturer)}|{normalize_text(product.product_name)}"
+                # 商品名のみをキーとして使用
+                key = normalize_text(product.product_name)
                 existing_products_map[key] = product
             
             processed_count = 0
@@ -117,15 +118,12 @@ class CSVService:
                 unit_price = float(row[actual_columns['unit_price']])
                 quantity = int(row[actual_columns['quantity']]) if pd.notna(row[actual_columns['quantity']]) else 0
                 
-                # 正規化されたキーで既存商品を検索
-                normalized_manufacturer = normalize_text(manufacturer)
+                # 正規化された商品名で既存商品を検索
                 normalized_product_name = normalize_text(product_name)
-                key = f"{normalized_manufacturer}|{normalized_product_name}"
-                existing_product = existing_products_map.get(key)
+                existing_product = existing_products_map.get(normalized_product_name)
                 
                 if existing_product:
-                    # 既存商品の更新（単価を更新し、在庫を追加）
-                    existing_product.unit_price = unit_price
+                    # 既存商品の更新（在庫数のみプラス）
                     existing_product.current_stock += quantity
                     existing_product.updated_at = datetime.utcnow()
                     updated_count += 1

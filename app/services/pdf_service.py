@@ -257,3 +257,92 @@ class PDFService:
             
         except Exception as e:
             return False, f"アラートPDFエクスポートエラー: {str(e)}"
+
+    @staticmethod
+    def export_inventory_count_pdf(dealer='', sort_by='product_name', sort_order='asc'):
+        """棚卸し表（カテゴリ・金額・数量・合計金額）をPDFでエクスポート"""
+        try:
+            query = Product.query.filter(
+                db.not_(db.and_(
+                    Product.product_name.like('取引会社管理用_%'),
+                    Product.manufacturer == 'システム'
+                )),
+                db.not_(db.and_(
+                    Product.product_name.like('カテゴリ管理用_%'),
+                    Product.manufacturer == 'システム'
+                ))
+            )
+            if dealer:
+                query = query.filter(Product.dealer == dealer)
+            if hasattr(Product, sort_by):
+                col = getattr(Product, sort_by)
+                query = query.order_by(col.desc() if sort_order == 'desc' else col.asc())
+            products = query.all()
+
+            if not products:
+                return False, "対象の商品がありません"
+
+            buffer = io.BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+            story = []
+
+            try:
+                pdfmetrics.registerFont(UnicodeCIDFont('HeiseiMin-W3'))
+                font_name = 'HeiseiMin-W3'
+            except Exception:
+                font_name = 'Helvetica'
+
+            styles = getSampleStyleSheet()
+            title_style = ParagraphStyle(
+                'CustomTitle',
+                parent=styles['Heading1'],
+                fontSize=16,
+                spaceAfter=20,
+                alignment=1,
+                fontName=font_name
+            )
+            title_text = "棚卸し表（在庫状況一覧）"
+            if dealer:
+                title_text += f" - {dealer}"
+            title_text += f" ({datetime.now().strftime('%Y年%m月%d日 %H:%M')})"
+            story.append(Paragraph(title_text, title_style))
+            story.append(Spacer(1, 16))
+
+            table_data = [['カテゴリ', '商品名', '金額（円）', '数量', '合計金額（円）']]
+            total_qty = 0
+            total_amount = 0
+            for p in products:
+                amount = (p.unit_price or 0) * (p.current_stock or 0)
+                total_qty += (p.current_stock or 0)
+                total_amount += amount
+                table_data.append([
+                    (p.category or '-'),
+                    (p.product_name or '-'),
+                    f'{(p.unit_price or 0):,.0f}',
+                    str(p.current_stock or 0),
+                    f'{amount:,.0f}'
+                ])
+            table_data.append(['', '', '', '合計', f'{total_amount:,.0f}'])
+
+            col_widths = [1.2*inch, 2.8*inch, 1.2*inch, 0.9*inch, 1.4*inch]
+            tbl = Table(table_data, colWidths=col_widths)
+            tbl.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2a2a2a')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('ALIGN', (2, 0), (-1, -1), 'RIGHT'),
+                ('FONTNAME', (0, 0), (-1, -1), font_name),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                ('BACKGROUND', (0, 1), (-1, -2), colors.white),
+                ('FONTSIZE', (0, 1), (-1, -2), 9),
+                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#e0e0e0')),
+                ('FONTSIZE', (0, -1), (-1, -1), 9),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ]))
+            story.append(tbl)
+            doc.build(story)
+            buffer.seek(0)
+            return True, buffer
+        except Exception as e:
+            return False, f"棚卸し表PDFエクスポートエラー: {str(e)}"

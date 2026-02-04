@@ -1093,6 +1093,13 @@
               <i class="fas fa-plus me-1"></i
               ><span class="d-none d-md-inline">商品登録</span>
             </button>
+            <a
+              href="/inventory-count"
+              class="btn btn-outline-light me-2 mb-2 mb-lg-0"
+            >
+              <i class="fas fa-clipboard-list me-1"></i
+              ><span class="d-none d-md-inline">棚卸し表</span>
+            </a>
             <a href="/alerts" class="btn btn-outline-light me-2 mb-2 mb-lg-0">
               <i class="fas fa-exclamation-triangle me-1"></i
               ><span class="d-none d-md-inline">アラート</span>
@@ -1638,7 +1645,7 @@
               if (dealerTabs) {
                 // 既存のタブ（「全て」以外）をクリア
                 const existingTabs = dealerTabs.querySelectorAll(
-                  ".nav-item:not(:first-child)"
+                  ".nav-item:not(:first-child)",
                 );
                 existingTabs.forEach((tab) => tab.remove());
 
@@ -1755,14 +1762,14 @@
         if (!text) return "";
         return text
           .replace(/[０-９]/g, (s) =>
-            String.fromCharCode(s.charCodeAt(0) - 0xfee0)
+            String.fromCharCode(s.charCodeAt(0) - 0xfee0),
           )
           .replace(/[Ａ-Ｚａ-ｚ]/g, (s) =>
-            String.fromCharCode(s.charCodeAt(0) - 0xfee0)
+            String.fromCharCode(s.charCodeAt(0) - 0xfee0),
           )
           .replace(/　/g, " ")
           .replace(/[！-～]/g, (s) =>
-            String.fromCharCode(s.charCodeAt(0) - 0xfee0)
+            String.fromCharCode(s.charCodeAt(0) - 0xfee0),
           )
           .toLowerCase();
       }
@@ -1831,13 +1838,13 @@
               const normalizedSearch = normalizeText(search);
               filteredProducts = products.filter((product) => {
                 const normalizedProductName = normalizeText(
-                  product.product_name || ""
+                  product.product_name || "",
                 );
                 const normalizedManufacturer = normalizeText(
-                  product.manufacturer || ""
+                  product.manufacturer || "",
                 );
                 const normalizedCategory = normalizeText(
-                  product.category || ""
+                  product.category || "",
                 );
                 const normalizedDealer = normalizeText(product.dealer || "");
 
@@ -2089,7 +2096,7 @@
 
         // バリデーション状態をクリア
         const formControls = document.querySelectorAll(
-          "#productForm .form-control, #productForm .form-select"
+          "#productForm .form-control, #productForm .form-select",
         );
         formControls.forEach((control) => {
           control.classList.remove("is-valid", "is-invalid");
@@ -2100,7 +2107,7 @@
 
         // モーダルを表示
         const modal = new bootstrap.Modal(
-          document.getElementById("productModal")
+          document.getElementById("productModal"),
         );
         modal.show();
       }
@@ -2113,7 +2120,7 @@
         if (manufacturer) {
           const prefix = manufacturer.substring(0, 3).toUpperCase();
           document.getElementById(
-            "productCode"
+            "productCode",
           ).value = `${prefix}_${timestamp}`;
         } else {
           document.getElementById("productCode").value = `PRD_${timestamp}`;
@@ -2237,7 +2244,7 @@
             if (data.success) {
               showAlert("success", "商品を登録しました");
               bootstrap.Modal.getInstance(
-                document.getElementById("productModal")
+                document.getElementById("productModal"),
               ).hide();
               loadInventory();
               loadDealers(); // 取引会社リストを更新
@@ -2258,11 +2265,11 @@
       function updateStats(products) {
         const totalProducts = products.length;
         const lowStockCount = products.filter(
-          (p) => p.current_stock < p.min_quantity
+          (p) => p.current_stock < p.min_quantity,
         ).length;
         const totalValue = products.reduce(
           (sum, p) => sum + p.current_stock * p.unit_price,
-          0
+          0,
         );
         const avgPrice = totalProducts > 0 ? totalValue / totalProducts : 0;
 
@@ -2322,7 +2329,7 @@
           const stockDisplay = row.querySelector(".stock-display");
           const minQuantityDisplay = row.querySelector(".min-quantity-display");
           const adjustButtons = row.querySelectorAll(
-            `button[onclick*="adjustStock(${productId}"]`
+            `button[onclick*="adjustStock(${productId}"]`,
           );
 
           if (adjustButtons.length > 0 && stockDisplay && minQuantityDisplay) {
@@ -2342,11 +2349,11 @@
 
         // モバイル用カードの更新
         const mobileCards = document.querySelectorAll(
-          "#mobileInventoryList .mobile-inventory-card"
+          "#mobileInventoryList .mobile-inventory-card",
         );
         mobileCards.forEach((card) => {
           const adjustButtons = card.querySelectorAll(
-            `button[onclick*="adjustStock(${productId}"]`
+            `button[onclick*="adjustStock(${productId}"]`,
           );
           const stockDisplay = card.querySelector(".mobile-stock-display");
 
@@ -2433,7 +2440,7 @@
           event.preventDefault();
           const display = document.getElementById(`minQuantity_${productId}`);
           const input = document.getElementById(
-            `minQuantityInput_${productId}`
+            `minQuantityInput_${productId}`,
           );
           if (display && input) {
             input.value = display.textContent;
@@ -2465,10 +2472,10 @@
           .then((data) => {
             if (data.success) {
               const select = document.getElementById(
-                `categorySelect_${productId}`
+                `categorySelect_${productId}`,
               );
               const currentCategory = document.getElementById(
-                `category_${productId}`
+                `category_${productId}`,
               ).textContent;
 
               // 既存のオプションをクリア（「未設定」は保持）
@@ -2543,7 +2550,7 @@
         deleteProductId = productId;
         document.getElementById("deleteProductName").textContent = productName;
         new bootstrap.Modal(
-          document.getElementById("deleteConfirmModal")
+          document.getElementById("deleteConfirmModal"),
         ).show();
       }
 
@@ -2559,7 +2566,7 @@
             if (data.success) {
               showAlert("success", data.message);
               bootstrap.Modal.getInstance(
-                document.getElementById("deleteConfirmModal")
+                document.getElementById("deleteConfirmModal"),
               ).hide();
               loadInventory();
             } else {

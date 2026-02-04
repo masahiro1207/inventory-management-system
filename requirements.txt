@@ -1,11 +1,11 @@
 Flask==2.3.3
 Flask-SQLAlchemy==3.0.5
-pandas==2.0.3
-numpy==1.24.3
+pandas>=2.0.3
+numpy>=1.24.3,<3
 reportlab==4.0.4
 Werkzeug==2.3.7
 python-dotenv==1.0.0
 flask-cors==4.0.0
 chardet==5.2.0
 gunicorn==21.2.0
-psycopg2-binary==2.9.7
+# 本番でPostgreSQLを使う場合のみ: psycopg2-binary==2.9.7

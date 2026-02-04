@@ -35,6 +35,11 @@ def settings_page():
     """設定ページ - カテゴリ・取引会社・メーカー管理"""
     return render_template('settings.html')
 
+@inventory_bp.route('/inventory-count')
+def inventory_count_page():
+    """棚卸し表ページ - 現在の在庫状況一覧"""
+    return render_template('inventory_count.html')
+
 @inventory_bp.route('/api/products', methods=['GET'])
 def get_products():
     """商品一覧をJSONで取得（検索・ソート・フィルタ対応）"""
@@ -81,6 +86,7 @@ def get_products():
         
         return jsonify([{
             'id': p.id,
+            'product_code': p.product_code,
             'manufacturer': p.manufacturer,
             'product_name': p.product_name,
             'unit_price': p.unit_price,
@@ -590,6 +596,29 @@ def export_pdf():
             dealer_suffix = f"_{dealer}" if dealer else ""
             filename = f"在庫レポート{dealer_suffix}_{timestamp}.pdf"
             
+            return send_file(
+                result,
+                as_attachment=True,
+                download_name=filename,
+                mimetype='application/pdf'
+            )
+        else:
+            return jsonify({'success': False, 'error': result}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@inventory_bp.route('/api/pdf/inventory-count', methods=['GET'])
+def export_inventory_count_pdf():
+    """棚卸し表（カテゴリ・金額・数量・合計金額）のPDFエクスポート"""
+    try:
+        dealer = request.args.get('dealer', '')
+        sort_by = request.args.get('sort_by', 'product_name')
+        sort_order = request.args.get('sort_order', 'asc')
+        success, result = pdf_service.export_inventory_count_pdf(dealer, sort_by, sort_order)
+        if success:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            dealer_suffix = f"_{dealer}" if dealer else ""
+            filename = f"棚卸し表{dealer_suffix}_{timestamp}.pdf"
             return send_file(
                 result,
                 as_attachment=True,

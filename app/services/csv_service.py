@@ -1,5 +1,7 @@
 import pandas as pd
 import os
+import unicodedata
+import re
 from app.models.inventory import Product
 from app import db
 from datetime import datetime
@@ -94,11 +96,19 @@ class CSVService:
                 if not found:
                     return False, f"必要な列 '{target}' が見つかりません。利用可能な列: {list(df.columns)}"
             
-            # 全角・半角を統一する関数
-            def normalize_text(text):
-                if not text:
+            # 商品名照合用: 半角カタカナ・全角英数・空白差を吸収（例: ﾌｨﾖｰﾚ と フィヨーレ）
+            def normalize_text(text) -> str:
+                if text is None or (isinstance(text, float) and pd.isna(text)):
                     return ''
-                return text.replace('　', ' ').replace('０', '0').replace('１', '1').replace('２', '2').replace('３', '3').replace('４', '4').replace('５', '5').replace('６', '6').replace('７', '7').replace('８', '8').replace('９', '9').lower()
+                s = str(text).strip()
+                if not s or s.lower() == 'nan':
+                    return ''
+                s = unicodedata.normalize('NFKC', s)
+                s = s.replace('　', ' ')
+                for fw, hw in zip('０１２３４５６７８９', '0123456789'):
+                    s = s.replace(fw, hw)
+                s = re.sub(r'\s+', ' ', s)
+                return s.casefold()
             
             # 既存商品を事前に取得して正規化された商品名でマップ化（商品名のみで照合）
             existing_products = Product.query.all()
@@ -150,6 +160,8 @@ class CSVService:
                         category=None    # デフォルトでカテゴリは未設定
                     )
                     db.session.add(new_product)
+                    # 同一CSV内の続く行でも同一商品名なら在庫加算できるようマップへ登録
+                    existing_products_map[normalized_product_name] = new_product
                     added_count += 1
                 
                 processed_count += 1

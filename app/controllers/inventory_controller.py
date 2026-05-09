@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, render_template, send_file
 from app.models.inventory import Product, OrderHistory
 from app.services.csv_service import CSVService
 from app.services.pdf_service import PDFService
+from app.services.delivery_pdf_import_service import DeliveryPdfImportService
 from app import db
 from datetime import datetime
 import os
@@ -18,6 +19,7 @@ except ImportError:
 inventory_bp = Blueprint('inventory', __name__)
 csv_service = CSVService()
 pdf_service = PDFService()
+delivery_pdf_import_service = DeliveryPdfImportService()
 
 @inventory_bp.route('/')
 def index():
@@ -568,6 +570,53 @@ def upload_csv():
             
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@inventory_bp.route('/api/pdf/inventory-upload', methods=['POST'])
+def upload_inventory_pdf():
+    """納品書PDFのアップロード（ビューティガレージ形式の明細を在庫へ反映）"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'ファイルが選択されていません'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'ファイルが選択されていません'}), 400
+
+        if not (file.filename.lower().endswith('.pdf')):
+            return jsonify({'success': False, 'error': 'PDFファイルのみ対応しています'}), 400
+
+        dealer = request.form.get('dealer', '')
+        try:
+            match_threshold = float(request.form.get('match_threshold', '0.8'))
+        except ValueError:
+            match_threshold = 0.8
+        match_threshold = max(0.5, min(1.0, match_threshold))
+
+        from werkzeug.utils import secure_filename
+
+        safe_name = secure_filename(file.filename) or 'upload.pdf'
+        filename = f"pdf_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}"
+        filepath = os.path.join('uploads', filename)
+        os.makedirs('uploads', exist_ok=True)
+        file.save(filepath)
+
+        success, message, detail = delivery_pdf_import_service.process_delivery_pdf(
+            filepath,
+            preferred_dealer=dealer,
+            similarity_threshold=match_threshold,
+        )
+        try:
+            os.remove(filepath)
+        except OSError:
+            pass
+
+        if success:
+            return jsonify({'success': True, 'message': message, 'detail': detail})
+        return jsonify({'success': False, 'error': message}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @inventory_bp.route('/api/csv/export', methods=['GET'])
 def export_csv():

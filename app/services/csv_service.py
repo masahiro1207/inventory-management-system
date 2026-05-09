@@ -1,10 +1,10 @@
 import pandas as pd
 import os
-import unicodedata
-import re
+import time
 from app.models.inventory import Product
 from app import db
 from datetime import datetime
+from app.services.product_matching import find_best_product_match
 
 class CSVService:
     @staticmethod
@@ -96,31 +96,13 @@ class CSVService:
                 if not found:
                     return False, f"必要な列 '{target}' が見つかりません。利用可能な列: {list(df.columns)}"
             
-            # 商品名照合用: 半角カタカナ・全角英数・空白差を吸収（例: ﾌｨﾖｰﾚ と フィヨーレ）
-            def normalize_text(text) -> str:
-                if text is None or (isinstance(text, float) and pd.isna(text)):
-                    return ''
-                s = str(text).strip()
-                if not s or s.lower() == 'nan':
-                    return ''
-                s = unicodedata.normalize('NFKC', s)
-                s = s.replace('　', ' ')
-                for fw, hw in zip('０１２３４５６７８９', '0123456789'):
-                    s = s.replace(fw, hw)
-                s = re.sub(r'\s+', ' ', s)
-                return s.casefold()
-            
-            # 既存商品を事前に取得して正規化された商品名でマップ化（商品名のみで照合）
-            existing_products = Product.query.all()
-            existing_products_map = {}
-            for product in existing_products:
-                # 商品名のみをキーとして使用
-                key = normalize_text(product.product_name)
-                existing_products_map[key] = product
-            
+            # 全取引会社の商品を候補にし、同一商品を別会社から仕入れても名前が一致すれば在庫加算。
+            # アップロードで選んだ取引会社は、同類似度のとき在庫を紐づける行の優先に使う。
+            working_products = list(Product.query.all())
             processed_count = 0
             updated_count = 0
             added_count = 0
+            ambiguous_count = 0
             
             for _, row in df.iterrows():
                 manufacturer = str(row[actual_columns['manufacturer']]).strip()
@@ -128,23 +110,24 @@ class CSVService:
                 unit_price = float(row[actual_columns['unit_price']])
                 quantity = int(row[actual_columns['quantity']]) if pd.notna(row[actual_columns['quantity']]) else 0
                 
-                # 正規化された商品名で既存商品を検索
-                normalized_product_name = normalize_text(product_name)
-                existing_product = existing_products_map.get(normalized_product_name)
-                
-                if existing_product:
-                    # 既存商品の更新（在庫数のみプラス）
-                    existing_product.current_stock += quantity
-                    existing_product.updated_at = datetime.utcnow()
+                match, _score, reason = find_best_product_match(
+                    product_name,
+                    working_products,
+                    preferred_dealer=dealer,
+                )
+                if reason == "ambiguous":
+                    ambiguous_count += 1
+                    processed_count += 1
+                    continue
+                if match is not None:
+                    match.current_stock += quantity
+                    match.updated_at = datetime.utcnow()
                     updated_count += 1
                 else:
-                    # 新規商品の作成（商品コードは自動生成、重複回避）
-                    import time
-                    timestamp = int(time.time() * 1000) % 100000  # 5桁のタイムスタンプ
+                    timestamp = int(time.time() * 1000) % 100000
                     manufacturer_prefix = manufacturer[:3].upper()
                     product_code = f"{manufacturer_prefix}_{timestamp:05d}"
                     
-                    # 商品コードの重複チェック
                     while Product.query.filter_by(product_code=product_code).first():
                         timestamp += 1
                         product_code = f"{manufacturer_prefix}_{timestamp:05d}"
@@ -156,12 +139,11 @@ class CSVService:
                         unit_price=unit_price,
                         current_stock=quantity,
                         dealer=dealer if dealer else None,
-                        min_quantity=5,  # デフォルトの最低必要数
-                        category=None    # デフォルトでカテゴリは未設定
+                        min_quantity=5,
+                        category=None,
                     )
                     db.session.add(new_product)
-                    # 同一CSV内の続く行でも同一商品名なら在庫加算できるようマップへ登録
-                    existing_products_map[normalized_product_name] = new_product
+                    working_products.append(new_product)
                     added_count += 1
                 
                 processed_count += 1
@@ -172,6 +154,11 @@ class CSVService:
                 message += f" - 新規追加: {added_count}件"
             if updated_count > 0:
                 message += f" - 既存商品更新: {updated_count}件"
+            if ambiguous_count > 0:
+                message += (
+                    f" - 類似が曖昧でスキップ: {ambiguous_count}件"
+                    "（商品名の表記を統一するか、手動で在庫調整してください）"
+                )
             return True, message
             
         except Exception as e:

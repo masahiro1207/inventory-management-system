@@ -3,9 +3,11 @@ Flask-SQLAlchemy==3.0.5
 pandas>=2.0.3
 numpy>=1.24.3,<3
 reportlab==4.0.4
+pypdf>=4.0.0
 Werkzeug==2.3.7
 python-dotenv==1.0.0
 flask-cors==4.0.0
 chardet==5.2.0
 gunicorn==21.2.0
-psycopg2-binary==2.9.7
+# 2.9.7 は Python 3.13 でビルド失敗（_PyInterpreterState_Get 等）。3.13 対応は 2.9.10+。
+psycopg2-binary==2.9.12

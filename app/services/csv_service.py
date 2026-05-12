@@ -70,7 +70,13 @@ class CSVService:
                     'product_name': ['商品名', 'product_name', '商品', '品名'],
                     'unit_price': ['サロン価（税抜）', 'サロン価格', '単価', 'unit_price', '価格'],
                     'quantity': ['数量', 'quantity', '個数', '入荷数']
-                }
+                },
+                'BEAUTY GARAGE': {
+                    'manufacturer': ['メーカー名', 'manufacturer', 'メーカー', 'ブランド'],
+                    'product_name': ['商品名', 'product_name', '商品', '品名'],
+                    'unit_price': ['サロン価（税抜）', 'サロン価格', '単価', 'unit_price', '価格'],
+                    'quantity': ['数量', 'quantity', '個数', '入荷数']
+                },
             }
             
             # 汎用マッピング（上記に該当しない場合）

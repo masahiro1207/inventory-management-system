@@ -255,6 +255,10 @@ def adjust_stock(product_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
+# 一覧に常に出す取引会社（DB に商品が無くても選択可能にする）
+_EXTRA_DEALER_PRESETS = ('BEAUTY GARAGE',)
+
+
 @inventory_bp.route('/api/dealers', methods=['GET'])
 def get_dealers():
     """取引会社一覧を取得"""
@@ -262,9 +266,7 @@ def get_dealers():
         # 商品に設定されている取引会社を取得（システム管理用ダミー商品も含む）
         product_dealers = db.session.query(Product.dealer).distinct().filter(Product.dealer.isnot(None)).all()
         dealer_list = [dealer[0] for dealer in product_dealers if dealer[0]]
-        
-        # 重複を除去してソート
-        dealer_list = sorted(list(set(dealer_list)))
+        dealer_list = sorted(set(dealer_list) | set(_EXTRA_DEALER_PRESETS))
         
         return jsonify({'success': True, 'dealers': dealer_list})
     except Exception as e:

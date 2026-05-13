@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 import time
+import unicodedata
 from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
@@ -10,9 +11,14 @@ from app import db
 from app.models.inventory import Product
 from app.services.product_matching import find_best_product_match
 
+# DB の product_name / product_code の上限に合わせる
+_MAX_PRODUCT_NAME_LEN = 200
+_MAX_PRODUCT_CODE_LEN = 50
+
 # 行頭: 注文番号 S… + 商品コード（数字のみ or 英数字） + 商品名の開始
 _LINE_START = re.compile(r"^(S\d+-\d+)\s+(\S+)\s+(.+)$")
-_QTY_LINE = re.compile(r"^(\d+)\s+個\s*$")
+# 「2 個」「2個」「２ 個」（NFKC 後）などに対応
+_QTY_LINE = re.compile(r"^([0-9]{1,9})\s*個\s*$")
 
 
 def parse_beauty_garage_delivery_text(text: str) -> List[Dict[str, Any]]:
@@ -20,7 +26,8 @@ def parse_beauty_garage_delivery_text(text: str) -> List[Dict[str, Any]]:
     ビューティガレージ納品書（テキスト抽出結果）から明細をパースする。
     商品名は改行で分割されるため、次の「N 個」行までを結合する。
     """
-    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    raw = unicodedata.normalize("NFKC", (text or "").replace("\ufeff", ""))
+    lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
     items: List[Dict[str, Any]] = []
     i = 0
     while i < len(lines):
@@ -33,16 +40,20 @@ def parse_beauty_garage_delivery_text(text: str) -> List[Dict[str, Any]]:
         i += 1
         qty: int | None = None
         while i < len(lines):
-            qm = _QTY_LINE.match(lines[i])
+            line = lines[i]
+            qm = _QTY_LINE.match(line)
             if qm:
                 qty = int(qm.group(1))
                 i += 1
                 break
-            name_parts.append(lines[i])
+            # 数量行が欠けたまま次の明細が始まった場合は、ここで打ち切り（次行を明細先頭として再処理）
+            if _LINE_START.match(line):
+                break
+            name_parts.append(line)
             i += 1
         if qty is not None:
             full_name = " ".join(name_parts)
-            full_name = re.sub(r"\s+", " ", full_name).strip()
+            full_name = re.sub(r"\s+", " ", full_name).strip()[:_MAX_PRODUCT_NAME_LEN]
             items.append(
                 {
                     "order_id": order_id,
@@ -57,7 +68,7 @@ def parse_beauty_garage_delivery_text(text: str) -> List[Dict[str, Any]]:
 def extract_pdf_text(file_path: str) -> str:
     from pypdf import PdfReader
 
-    reader = PdfReader(file_path)
+    reader = PdfReader(file_path, strict=False)
     parts: List[str] = []
     for page in reader.pages:
         t = page.extract_text()
@@ -121,15 +132,23 @@ class DeliveryPdfImportService:
                 else:
                     timestamp = int(time.time() * 1000) % 100000
                     prefix = (preferred_dealer[:3] if preferred_dealer else "PDF").upper()
-                    slip = row["slip_product_code"]
-                    product_code = f"{prefix}_{slip}_{timestamp:05d}"
+                    slip = re.sub(r"[\s/\\]+", "", str(row["slip_product_code"]))
+                    # product_code は 50 文字上限。slip を短くしてから組み立てる。
+                    for slip_len in (24, 16, 10, 6):
+                        product_code = f"{prefix}_{slip[:slip_len]}_{timestamp:05d}"
+                        if len(product_code) <= _MAX_PRODUCT_CODE_LEN:
+                            break
+                    product_code = product_code[:_MAX_PRODUCT_CODE_LEN]
                     while Product.query.filter_by(product_code=product_code).first():
                         timestamp += 1
-                        product_code = f"{prefix}_{slip}_{timestamp:05d}"
+                        product_code = f"{prefix}_{slip[:6]}_{timestamp:05d}"[
+                            :_MAX_PRODUCT_CODE_LEN
+                        ]
+                    safe_name = name[:_MAX_PRODUCT_NAME_LEN]
                     new_product = Product(
                         product_code=product_code,
                         manufacturer="未設定",
-                        product_name=name,
+                        product_name=safe_name,
                         unit_price=0.0,
                         current_stock=qty,
                         dealer=preferred_dealer if preferred_dealer else None,
@@ -137,6 +156,7 @@ class DeliveryPdfImportService:
                         category=None,
                     )
                     db.session.add(new_product)
+                    db.session.flush()
                     working_list.append(new_product)
                     added_count += 1
 

@@ -589,22 +589,30 @@
         }
 
         .min-quantity-container,
-        .category-container {
+        .category-container,
+        .manufacturer-container {
           min-width: 60px;
         }
 
         .min-quantity-display,
-        .category-display {
+        .category-display,
+        .manufacturer-display {
           padding: 0.2rem 0.4rem;
           font-size: 0.8rem;
           min-width: 35px;
         }
 
         .min-quantity-input,
-        .category-select {
+        .category-select,
+        .manufacturer-input {
           width: 50px;
           font-size: 0.8rem;
           padding: 0.2rem 0.4rem;
+        }
+
+        .manufacturer-input {
+          width: 100%;
+          max-width: 100%;
         }
 
         .stock-controls {
@@ -1037,6 +1045,57 @@
       .category-select option {
         background: var(--dark-card);
         color: var(--text-primary);
+      }
+
+      /* メーカーインライン編集 */
+      .manufacturer-container {
+        position: relative;
+        display: inline-block;
+        min-width: 80px;
+        max-width: 220px;
+      }
+
+      .manufacturer-display {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        background: var(--dark-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: var(--text-primary);
+        font-weight: 600;
+        min-width: 60px;
+        font-size: 0.9rem;
+      }
+
+      .manufacturer-display:hover {
+        background: var(--primary-color);
+        color: var(--dark-bg);
+        border-color: var(--primary-color);
+        transform: scale(1.02);
+      }
+
+      .manufacturer-input {
+        background: var(--dark-card);
+        border: 2px solid var(--primary-color);
+        border-radius: 6px;
+        color: var(--text-primary);
+        padding: 0.25rem 0.5rem;
+        min-width: 120px;
+        max-width: 240px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+      }
+
+      .manufacturer-input:focus {
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.3);
+      }
+
+      .mobile-manufacturer-row {
+        margin-top: 0.35rem;
       }
     </style>
   </head>
@@ -1961,7 +2020,30 @@
               : "stock-ok";
 
           row.innerHTML = `
-                        <td><strong>${product.manufacturer}</strong></td>
+                        <td>
+                            <div class="manufacturer-container">
+                                <span class="manufacturer-display" id="manufacturer_${
+                                  product.id
+                                }" title="クリックして編集" onclick="editManufacturer(${
+                                  product.id
+                                }, false)">
+                                    ${product.manufacturer || "-"}
+                                </span>
+                                <input type="text" class="manufacturer-input" id="manufacturerInput_${
+                                  product.id
+                                }"
+                                    value=${JSON.stringify(
+                                      product.manufacturer || "",
+                                    )}
+                                    style="display: none;"
+                                    onblur="saveManufacturer(${
+                                      product.id
+                                    }, false)"
+                                    onkeydown="handleManufacturerKeydown(event, ${
+                                      product.id
+                                    }, false)">
+                            </div>
+                        </td>
                         <td><strong>${product.product_name}</strong></td>
                         <td>¥${product.unit_price.toLocaleString()}</td>
                         <td>
@@ -2060,7 +2142,25 @@
           card.innerHTML = `
             <div class="mobile-product-header">
               <h6 class="mobile-product-name">${product.product_name}</h6>
-              <p class="mobile-manufacturer">${product.manufacturer || "-"}</p>
+              <div class="mobile-manufacturer-row">
+                <small class="text-muted d-block mb-1">メーカー（タップで編集）</small>
+                <div class="manufacturer-container" style="max-width: 100%">
+                  <span class="manufacturer-display" id="manufacturer_m_${
+                    product.id
+                  }" title="タップして編集" onclick="editManufacturer(${
+                    product.id
+                  }, true)">${product.manufacturer || "-"}</span>
+                  <input type="text" class="manufacturer-input" id="manufacturerInput_m_${
+                    product.id
+                  }"
+                    value=${JSON.stringify(product.manufacturer || "")}
+                    style="display: none; width: 100%; max-width: 100%;"
+                    onblur="saveManufacturer(${product.id}, true)"
+                    onkeydown="handleManufacturerKeydown(event, ${
+                      product.id
+                    }, true)">
+                </div>
+              </div>
             </div>
             <div class="mobile-product-details">
               <span class="mobile-category">${
@@ -2398,6 +2498,95 @@
             }
           }
         });
+      }
+
+      function manufacturerFieldIds(productId, isMobile) {
+        if (isMobile) {
+          return {
+            display: `manufacturer_m_${productId}`,
+            input: `manufacturerInput_m_${productId}`,
+          };
+        }
+        return {
+          display: `manufacturer_${productId}`,
+          input: `manufacturerInput_${productId}`,
+        };
+      }
+
+      function editManufacturer(productId, isMobile) {
+        const { display, input } = manufacturerFieldIds(productId, isMobile);
+        const displayEl = document.getElementById(display);
+        const inputEl = document.getElementById(input);
+        if (displayEl && inputEl) {
+          inputEl.value = displayEl.textContent.trim();
+          if (inputEl.value === "-") inputEl.value = "";
+          displayEl.style.display = "none";
+          inputEl.style.display = "inline-block";
+          inputEl.focus();
+          inputEl.select();
+        }
+      }
+
+      function saveManufacturer(productId, isMobile) {
+        const { display, input } = manufacturerFieldIds(productId, isMobile);
+        const displayEl = document.getElementById(display);
+        const inputEl = document.getElementById(input);
+        if (!displayEl || !inputEl) return;
+
+        const raw = inputEl.value.trim();
+        if (!raw) {
+          showAlert("warning", "メーカーは必須です");
+          inputEl.value = displayEl.textContent.trim();
+          if (inputEl.value === "-") inputEl.value = "";
+          displayEl.style.display = "inline-block";
+          inputEl.style.display = "none";
+          return;
+        }
+
+        fetch(`/api/products/${productId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ manufacturer: raw }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              displayEl.textContent = raw;
+              showAlert("success", "メーカーを更新しました");
+              const other = manufacturerFieldIds(productId, !isMobile);
+              const otherDisplay = document.getElementById(other.display);
+              if (otherDisplay) otherDisplay.textContent = raw;
+            } else {
+              showAlert("danger", data.error);
+              inputEl.value = displayEl.textContent.trim();
+              if (inputEl.value === "-") inputEl.value = "";
+            }
+          })
+          .catch((error) => {
+            showAlert("danger", "更新エラー: " + error);
+          })
+          .finally(() => {
+            displayEl.style.display = "inline-block";
+            inputEl.style.display = "none";
+          });
+      }
+
+      function handleManufacturerKeydown(event, productId, isMobile) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          saveManufacturer(productId, isMobile);
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          const { display, input } = manufacturerFieldIds(productId, isMobile);
+          const displayEl = document.getElementById(display);
+          const inputEl = document.getElementById(input);
+          if (displayEl && inputEl) {
+            inputEl.value = displayEl.textContent.trim();
+            if (inputEl.value === "-") inputEl.value = "";
+            displayEl.style.display = "inline-block";
+            inputEl.style.display = "none";
+          }
+        }
       }
 
       // 最低必要数のインライン編集を開始

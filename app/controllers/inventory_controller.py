@@ -195,6 +195,11 @@ def update_product(product_id):
             product.min_quantity = int(data['min_quantity'])
         if 'unit_price' in data:
             product.unit_price = float(data['unit_price'])
+        if 'manufacturer' in data:
+            m = data.get('manufacturer')
+            if m is None or not str(m).strip():
+                return jsonify({'success': False, 'error': 'メーカーは必須です'}), 400
+            product.manufacturer = str(m).strip()
         if 'category' in data:
             product.category = data['category']
         if 'dealer' in data:

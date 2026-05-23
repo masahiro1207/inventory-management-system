@@ -5,6 +5,7 @@ from app.models.inventory import Product
 from app import db
 from datetime import datetime
 from app.services.product_matching import find_best_product_match
+from app.services.product_alias_service import load_alias_map, register_import_name, sync_alias_map_entry
 
 class CSVService:
     @staticmethod
@@ -105,6 +106,7 @@ class CSVService:
             # 全取引会社の商品を候補にし、同一商品を別会社から仕入れても名前が一致すれば在庫加算。
             # アップロードで選んだ取引会社は、同類似度のとき在庫を紐づける行の優先に使う。
             working_products = list(Product.query.all())
+            alias_map = load_alias_map(working_products)
             processed_count = 0
             updated_count = 0
             added_count = 0
@@ -120,6 +122,7 @@ class CSVService:
                     product_name,
                     working_products,
                     preferred_dealer=dealer,
+                    alias_map=alias_map,
                 )
                 if reason == "ambiguous":
                     ambiguous_count += 1
@@ -128,6 +131,8 @@ class CSVService:
                 if match is not None:
                     match.current_stock += quantity
                     match.updated_at = datetime.utcnow()
+                    register_import_name(match, product_name, "csv")
+                    sync_alias_map_entry(alias_map, match)
                     updated_count += 1
                 else:
                     timestamp = int(time.time() * 1000) % 100000
@@ -149,6 +154,9 @@ class CSVService:
                         category=None,
                     )
                     db.session.add(new_product)
+                    db.session.flush()
+                    register_import_name(new_product, product_name, "csv")
+                    sync_alias_map_entry(alias_map, new_product)
                     working_products.append(new_product)
                     added_count += 1
                 

@@ -14,8 +14,34 @@ class Product(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    aliases = db.relationship(
+        'ProductAlias',
+        backref='product',
+        lazy='dynamic',
+        cascade='all, delete-orphan',
+    )
+
     def __repr__(self):
         return f'<Product {self.product_name}>'
+
+
+class ProductAlias(db.Model):
+    """取込時の正式名称など。表示は Product.product_name（手動編集名）を優先。"""
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(
+        db.Integer, db.ForeignKey('product.id', ondelete='CASCADE'), nullable=False
+    )
+    alias_name = db.Column(db.String(200), nullable=False)
+    source = db.Column(db.String(50))  # pdf, csv, rename, manual
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('product_id', 'alias_name', name='uq_product_alias_name'),
+    )
+
+    def __repr__(self):
+        return f'<ProductAlias {self.alias_name} -> {self.product_id}>'
+
 
 class OrderHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)

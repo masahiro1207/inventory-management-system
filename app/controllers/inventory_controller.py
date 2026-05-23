@@ -3,6 +3,7 @@ from app.models.inventory import Product, OrderHistory
 from app.services.csv_service import CSVService
 from app.services.pdf_service import PDFService
 from app.services.delivery_pdf_import_service import DeliveryPdfImportService
+from app.services.product_alias_service import on_product_renamed
 from app import db
 from datetime import datetime
 import os
@@ -194,7 +195,19 @@ def update_product(product_id):
         if 'min_quantity' in data:
             product.min_quantity = int(data['min_quantity'])
         if 'unit_price' in data:
-            product.unit_price = float(data['unit_price'])
+            price = float(data['unit_price'])
+            if price < 0:
+                return jsonify({'success': False, 'error': '単価は0以上で入力してください'}), 400
+            product.unit_price = price
+        if 'product_name' in data:
+            new_name = str(data.get('product_name', '')).strip()
+            if not new_name:
+                return jsonify({'success': False, 'error': '商品名は必須です'}), 400
+            new_name = new_name[:200]
+            old_name = product.product_name
+            if new_name != old_name:
+                on_product_renamed(product, old_name, new_name)
+                product.product_name = new_name
         if 'manufacturer' in data:
             m = data.get('manufacturer')
             if m is None or not str(m).strip():

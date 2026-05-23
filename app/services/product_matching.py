@@ -4,10 +4,10 @@ from __future__ import annotations
 import re
 import unicodedata
 from difflib import SequenceMatcher
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 # 類似度がこの値未満なら別商品扱い
-DEFAULT_SIMILARITY_THRESHOLD = 0.80
+DEFAULT_SIMILARITY_THRESHOLD = 0.60
 # 1位と2位の類似度の差がこの値未満なら曖昧（誤マージ防止）。取引会社優先で決められる場合は採用する。
 DEFAULT_AMBIGUITY_MARGIN = 0.04
 
@@ -68,6 +68,26 @@ def _pick_among_exact(
     return ranked[0], 1.0, "exact"
 
 
+def _names_for_product(product: Any, alias_map: Dict[int, List[str]]) -> List[str]:
+    """照合に使う名称（表示名 product_name + 登録済みエイリアス）。"""
+    names: List[str] = []
+    display = getattr(product, "product_name", "") or ""
+    if display:
+        names.append(display)
+    pid = getattr(product, "id", None)
+    if pid is not None:
+        for alias in alias_map.get(pid, []):
+            if alias:
+                names.append(alias)
+    return names
+
+
+def _best_similarity(candidate_name: str, names: Sequence[str]) -> float:
+    if not names:
+        return 0.0
+    return max(name_similarity(candidate_name, n) for n in names)
+
+
 def find_best_product_match(
     candidate_name: str,
     products: List[Any],
@@ -75,6 +95,7 @@ def find_best_product_match(
     preferred_dealer: str = "",
     similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
     ambiguity_margin: float = DEFAULT_AMBIGUITY_MARGIN,
+    alias_map: Optional[Dict[int, List[str]]] = None,
 ) -> Tuple[Optional[Any], float, str]:
     """
     既存商品から最も近い1件を返す。候補は取引会社で絞らず全件対象とし、
@@ -91,17 +112,24 @@ def find_best_product_match(
         return None, 0.0, "none"
 
     pool = list(products)
-    exact_hits = [
-        p for p in pool if normalize_product_name(getattr(p, "product_name", "")) == cand
-    ]
+    if alias_map is None:
+        from app.services.product_alias_service import load_alias_map
+
+        alias_map = load_alias_map(pool)
+
+    exact_hits = []
+    for p in pool:
+        for n in _names_for_product(p, alias_map):
+            if normalize_product_name(n) == cand:
+                exact_hits.append(p)
+                break
     if exact_hits:
         p, s, r = _pick_among_exact(exact_hits, preferred_dealer)
         return p, s, r
 
     scored: List[Tuple[Any, float, int]] = []
     for p in pool:
-        pname = getattr(p, "product_name", "")
-        sim = name_similarity(candidate_name, pname)
+        sim = _best_similarity(candidate_name, _names_for_product(p, alias_map))
         if sim <= 0:
             continue
         tier = dealer_tier(p, preferred_dealer)

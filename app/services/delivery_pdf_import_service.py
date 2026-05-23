@@ -10,6 +10,11 @@ from typing import Any, Dict, List, Tuple
 from app import db
 from app.models.inventory import Product
 from app.services.product_matching import find_best_product_match
+from app.services.product_alias_service import (
+    load_alias_map,
+    register_import_name,
+    sync_alias_map_entry,
+)
 
 # DB の product_name / product_code の上限に合わせる
 _MAX_PRODUCT_NAME_LEN = 200
@@ -102,6 +107,7 @@ class DeliveryPdfImportService:
                 )
 
             working_list: List[Any] = list(Product.query.all())
+            alias_map = load_alias_map(working_list)
             updated_count = 0
             added_count = 0
             ambiguous: List[Dict[str, Any]] = []
@@ -115,6 +121,7 @@ class DeliveryPdfImportService:
                     preferred_dealer=preferred_dealer,
                     similarity_threshold=similarity_threshold,
                     ambiguity_margin=ambiguity_margin,
+                    alias_map=alias_map,
                 )
                 if reason == "ambiguous":
                     ambiguous.append(
@@ -128,6 +135,8 @@ class DeliveryPdfImportService:
                 if match is not None:
                     match.current_stock += qty
                     match.updated_at = datetime.utcnow()
+                    register_import_name(match, name, "pdf")
+                    sync_alias_map_entry(alias_map, match)
                     updated_count += 1
                 else:
                     timestamp = int(time.time() * 1000) % 100000
@@ -157,6 +166,8 @@ class DeliveryPdfImportService:
                     )
                     db.session.add(new_product)
                     db.session.flush()
+                    register_import_name(new_product, safe_name, "pdf")
+                    sync_alias_map_entry(alias_map, new_product)
                     working_list.append(new_product)
                     added_count += 1
 

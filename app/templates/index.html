@@ -1097,6 +1097,95 @@
       .mobile-manufacturer-row {
         margin-top: 0.35rem;
       }
+
+      /* 商品名・単価インライン編集 */
+      .product-name-container {
+        position: relative;
+        display: inline-block;
+        min-width: 120px;
+        max-width: 280px;
+      }
+
+      .product-name-display {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        background: var(--dark-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.95rem;
+        max-width: 100%;
+        word-break: break-word;
+      }
+
+      .product-name-display:hover {
+        background: var(--accent-color);
+        color: var(--dark-bg);
+        border-color: var(--accent-color);
+      }
+
+      .product-name-input {
+        background: var(--dark-card);
+        border: 2px solid var(--accent-color);
+        border-radius: 6px;
+        color: var(--text-primary);
+        padding: 0.25rem 0.5rem;
+        min-width: 140px;
+        max-width: 280px;
+        width: 100%;
+        font-size: 0.95rem;
+        font-weight: 600;
+        outline: none;
+      }
+
+      .unit-price-container {
+        position: relative;
+        display: inline-block;
+        min-width: 70px;
+      }
+
+      .unit-price-display {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        background: var(--dark-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: var(--text-primary);
+        font-weight: 500;
+        font-size: 0.9rem;
+      }
+
+      .unit-price-display:hover {
+        background: #28a745;
+        color: #fff;
+        border-color: #28a745;
+      }
+
+      .unit-price-input {
+        background: var(--dark-card);
+        border: 2px solid #28a745;
+        border-radius: 6px;
+        color: var(--text-primary);
+        padding: 0.25rem 0.5rem;
+        width: 90px;
+        text-align: right;
+        font-size: 0.9rem;
+        outline: none;
+      }
+
+      .mobile-product-name-row {
+        margin-bottom: 0.5rem;
+      }
+
+      .mobile-unit-price-row {
+        margin-top: 0.35rem;
+        margin-bottom: 0.35rem;
+      }
     </style>
   </head>
   <body>
@@ -2044,8 +2133,46 @@
                                     }, false)">
                             </div>
                         </td>
-                        <td><strong>${product.product_name}</strong></td>
-                        <td>¥${product.unit_price.toLocaleString()}</td>
+                        <td>
+                            <div class="product-name-container">
+                                <span class="product-name-display" id="productName_${
+                                  product.id
+                                }" title="クリックして編集" onclick="editProductName(${
+                                  product.id
+                                }, false)">
+                                    ${product.product_name}
+                                </span>
+                                <input type="text" class="product-name-input" id="productNameInput_${
+                                  product.id
+                                }"
+                                    value=${JSON.stringify(product.product_name || "")}
+                                    style="display: none;"
+                                    onblur="saveProductName(${product.id}, false)"
+                                    onkeydown="handleProductNameKeydown(event, ${
+                                      product.id
+                                    }, false)">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="unit-price-container">
+                                <span class="unit-price-display" id="unitPrice_${
+                                  product.id
+                                }" title="クリックして編集" onclick="editUnitPrice(${
+                                  product.id
+                                }, false)">
+                                    ¥${product.unit_price.toLocaleString()}
+                                </span>
+                                <input type="number" class="unit-price-input" id="unitPriceInput_${
+                                  product.id
+                                }"
+                                    value="${product.unit_price}"
+                                    min="0" step="1" style="display: none;"
+                                    onblur="saveUnitPrice(${product.id}, false)"
+                                    onkeydown="handleUnitPriceKeydown(event, ${
+                                      product.id
+                                    }, false)">
+                            </div>
+                        </td>
                         <td>
                             <div class="stock-controls">
                                 <button class="btn btn-danger" onclick="adjustStock(${
@@ -2141,7 +2268,25 @@
 
           card.innerHTML = `
             <div class="mobile-product-header">
-              <h6 class="mobile-product-name">${product.product_name}</h6>
+              <div class="mobile-product-name-row">
+                <small class="text-muted d-block mb-1">商品名（タップで編集）</small>
+                <div class="product-name-container" style="max-width: 100%">
+                  <span class="product-name-display" id="productName_m_${
+                    product.id
+                  }" title="タップして編集" onclick="editProductName(${
+                    product.id
+                  }, true)">${product.product_name}</span>
+                  <input type="text" class="product-name-input" id="productNameInput_m_${
+                    product.id
+                  }"
+                    value=${JSON.stringify(product.product_name || "")}
+                    style="display: none; width: 100%; max-width: 100%;"
+                    onblur="saveProductName(${product.id}, true)"
+                    onkeydown="handleProductNameKeydown(event, ${
+                      product.id
+                    }, true)">
+                </div>
+              </div>
               <div class="mobile-manufacturer-row">
                 <small class="text-muted d-block mb-1">メーカー（タップで編集）</small>
                 <div class="manufacturer-container" style="max-width: 100%">
@@ -2159,6 +2304,21 @@
                     onkeydown="handleManufacturerKeydown(event, ${
                       product.id
                     }, true)">
+                </div>
+              </div>
+              <div class="mobile-unit-price-row">
+                <small class="text-muted d-block mb-1">単価（タップで編集）</small>
+                <div class="unit-price-container">
+                  <span class="unit-price-display" id="unitPrice_m_${
+                    product.id
+                  }" onclick="editUnitPrice(${product.id}, true)">¥${product.unit_price.toLocaleString()}</span>
+                  <input type="number" class="unit-price-input" id="unitPriceInput_m_${
+                    product.id
+                  }"
+                    value="${product.unit_price}" min="0" step="1"
+                    style="display: none; width: 100%; max-width: 120px;"
+                    onblur="saveUnitPrice(${product.id}, true)"
+                    onkeydown="handleUnitPriceKeydown(event, ${product.id}, true)">
                 </div>
               </div>
             </div>
@@ -2583,6 +2743,192 @@
           if (displayEl && inputEl) {
             inputEl.value = displayEl.textContent.trim();
             if (inputEl.value === "-") inputEl.value = "";
+            displayEl.style.display = "inline-block";
+            inputEl.style.display = "none";
+          }
+        }
+      }
+
+      function formatUnitPriceDisplay(value) {
+        const n = parseFloat(value);
+        if (isNaN(n)) return "¥0";
+        return "¥" + Math.round(n).toLocaleString();
+      }
+
+      function productNameFieldIds(productId, isMobile) {
+        if (isMobile) {
+          return {
+            display: `productName_m_${productId}`,
+            input: `productNameInput_m_${productId}`,
+          };
+        }
+        return {
+          display: `productName_${productId}`,
+          input: `productNameInput_${productId}`,
+        };
+      }
+
+      function unitPriceFieldIds(productId, isMobile) {
+        if (isMobile) {
+          return {
+            display: `unitPrice_m_${productId}`,
+            input: `unitPriceInput_m_${productId}`,
+          };
+        }
+        return {
+          display: `unitPrice_${productId}`,
+          input: `unitPriceInput_${productId}`,
+        };
+      }
+
+      function syncProductNameDisplays(productId, text) {
+        ["productName_" + productId, "productName_m_" + productId].forEach(
+          (id) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+          },
+        );
+      }
+
+      function syncUnitPriceDisplays(productId, value) {
+        const label = formatUnitPriceDisplay(value);
+        ["unitPrice_" + productId, "unitPrice_m_" + productId].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = label;
+        });
+      }
+
+      function editProductName(productId, isMobile) {
+        const { display, input } = productNameFieldIds(productId, isMobile);
+        const displayEl = document.getElementById(display);
+        const inputEl = document.getElementById(input);
+        if (displayEl && inputEl) {
+          inputEl.value = displayEl.textContent.trim();
+          displayEl.style.display = "none";
+          inputEl.style.display = "inline-block";
+          inputEl.focus();
+          inputEl.select();
+        }
+      }
+
+      function saveProductName(productId, isMobile) {
+        const { display, input } = productNameFieldIds(productId, isMobile);
+        const displayEl = document.getElementById(display);
+        const inputEl = document.getElementById(input);
+        if (!displayEl || !inputEl) return;
+
+        const raw = inputEl.value.trim();
+        if (!raw) {
+          showAlert("warning", "商品名は必須です");
+          inputEl.value = displayEl.textContent.trim();
+          displayEl.style.display = "inline-block";
+          inputEl.style.display = "none";
+          return;
+        }
+
+        fetch(`/api/products/${productId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ product_name: raw }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              syncProductNameDisplays(productId, raw);
+              showAlert("success", "商品名を更新しました");
+            } else {
+              showAlert("danger", data.error);
+              inputEl.value = displayEl.textContent.trim();
+            }
+          })
+          .catch((error) => {
+            showAlert("danger", "更新エラー: " + error);
+          })
+          .finally(() => {
+            displayEl.style.display = "inline-block";
+            inputEl.style.display = "none";
+          });
+      }
+
+      function handleProductNameKeydown(event, productId, isMobile) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          saveProductName(productId, isMobile);
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          const { display, input } = productNameFieldIds(productId, isMobile);
+          const displayEl = document.getElementById(display);
+          const inputEl = document.getElementById(input);
+          if (displayEl && inputEl) {
+            inputEl.value = displayEl.textContent.trim();
+            displayEl.style.display = "inline-block";
+            inputEl.style.display = "none";
+          }
+        }
+      }
+
+      function editUnitPrice(productId, isMobile) {
+        const { display, input } = unitPriceFieldIds(productId, isMobile);
+        const displayEl = document.getElementById(display);
+        const inputEl = document.getElementById(input);
+        if (displayEl && inputEl) {
+          const num = parseFloat(
+            displayEl.textContent.replace(/[¥,\s]/g, ""),
+          );
+          inputEl.value = isNaN(num) ? 0 : num;
+          displayEl.style.display = "none";
+          inputEl.style.display = "inline-block";
+          inputEl.focus();
+          inputEl.select();
+        }
+      }
+
+      function saveUnitPrice(productId, isMobile) {
+        const { display, input } = unitPriceFieldIds(productId, isMobile);
+        const displayEl = document.getElementById(display);
+        const inputEl = document.getElementById(input);
+        if (!displayEl || !inputEl) return;
+
+        const newValue = parseFloat(inputEl.value);
+        if (isNaN(newValue) || newValue < 0) {
+          showAlert("warning", "単価は0以上の数値で入力してください");
+          editUnitPrice(productId, isMobile);
+          return;
+        }
+
+        fetch(`/api/products/${productId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ unit_price: newValue }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              syncUnitPriceDisplays(productId, newValue);
+              showAlert("success", "単価を更新しました");
+            } else {
+              showAlert("danger", data.error);
+            }
+          })
+          .catch((error) => {
+            showAlert("danger", "更新エラー: " + error);
+          })
+          .finally(() => {
+            displayEl.style.display = "inline-block";
+            inputEl.style.display = "none";
+          });
+      }
+
+      function handleUnitPriceKeydown(event, productId, isMobile) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          saveUnitPrice(productId, isMobile);
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          const { display, input } = unitPriceFieldIds(productId, isMobile);
+          const displayEl = document.getElementById(display);
+          const inputEl = document.getElementById(input);
+          if (displayEl && inputEl) {
             displayEl.style.display = "inline-block";
             inputEl.style.display = "none";
           }

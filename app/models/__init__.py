@@ -1,4 +1,4 @@
 from app import db
-from .inventory import Product, OrderHistory
+from .inventory import Product, ProductAlias, OrderHistory
 
-__all__ = ['Product', 'OrderHistory']
+__all__ = ['Product', 'ProductAlias', 'OrderHistory']

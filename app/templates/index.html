@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-bs-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -170,7 +170,13 @@
       }
 
       .table {
+        --bs-table-bg: var(--dark-card);
+        --bs-table-color: var(--text-primary);
+        --bs-table-hover-bg: rgba(0, 212, 255, 0.1);
+        --bs-table-border-color: var(--border-color);
+        --bs-table-striped-bg: rgba(255, 255, 255, 0.03);
         background: var(--dark-card);
+        color: var(--text-primary);
         border-radius: 15px;
         overflow: hidden;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
@@ -201,7 +207,7 @@
       }
 
       .table tbody td {
-        color: var(--dark-card);
+        color: var(--text-primary);
         border-color: var(--border-color);
         padding: 1rem;
       }
@@ -1063,7 +1069,7 @@
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.3s ease;
-        color: var(--text-primary);
+        color: inherit;
         font-weight: 600;
         min-width: 60px;
         font-size: 0.9rem;
@@ -1113,7 +1119,7 @@
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.3s ease;
-        color: var(--text-primary);
+        color: inherit;
         font-weight: 600;
         font-size: 0.95rem;
         max-width: 100%;
@@ -1153,7 +1159,7 @@
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.3s ease;
-        color: var(--text-primary);
+        color: inherit;
         font-weight: 500;
         font-size: 0.9rem;
       }

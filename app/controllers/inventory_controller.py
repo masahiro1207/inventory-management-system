@@ -4,6 +4,7 @@ from app.services.csv_service import CSVService
 from app.services.pdf_service import PDFService
 from app.services.delivery_pdf_import_service import DeliveryPdfImportService
 from app.services.product_alias_service import on_product_renamed
+from app.services.product_merge_service import merge_products
 from app import db
 from datetime import datetime
 import os
@@ -224,6 +225,44 @@ def update_product(product_id):
         return jsonify({'success': True, 'message': '商品情報を更新しました'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
+
+
+@inventory_bp.route('/api/products/merge', methods=['POST'])
+def merge_products_api():
+    """2〜3 件の商品を統合（在庫合算・各項目の採用元を指定）"""
+    try:
+        data = request.get_json() or {}
+        product_ids = data.get('product_ids', [])
+        if not isinstance(product_ids, list):
+            return jsonify({'success': False, 'error': 'product_ids が不正です'}), 400
+        try:
+            product_ids = [int(x) for x in product_ids]
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'error': 'product_ids が不正です'}), 400
+
+        def _src(field: str) -> int:
+            return int(data[field])
+
+        kept = merge_products(
+            product_ids,
+            manufacturer_from=_src('manufacturer_from'),
+            product_name_from=_src('product_name_from'),
+            unit_price_from=_src('unit_price_from'),
+            dealer_from=_src('dealer_from'),
+            keep_product_id=int(data['keep_product_id']) if data.get('keep_product_id') else None,
+        )
+        return jsonify({
+            'success': True,
+            'message': f'商品を統合しました（残存 ID: {kept.id}、在庫 {kept.current_stock}）',
+            'product_id': kept.id,
+        })
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
 
 @inventory_bp.route('/api/products/<int:product_id>', methods=['DELETE'])
 def delete_product(product_id):

@@ -1058,8 +1058,8 @@
       .manufacturer-display {
         display: inline-block;
         padding: 0.25rem 0.5rem;
-        background: var(--dark-surface);
-        border: 1px solid var(--border-color);
+        background: transparent;
+        border: none;
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.3s ease;
@@ -1072,7 +1072,6 @@
       .manufacturer-display:hover {
         background: var(--primary-color);
         color: var(--dark-bg);
-        border-color: var(--primary-color);
         transform: scale(1.02);
       }
 
@@ -1109,8 +1108,8 @@
       .product-name-display {
         display: inline-block;
         padding: 0.25rem 0.5rem;
-        background: var(--dark-surface);
-        border: 1px solid var(--border-color);
+        background: transparent;
+        border: none;
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.3s ease;
@@ -1124,7 +1123,6 @@
       .product-name-display:hover {
         background: var(--accent-color);
         color: var(--dark-bg);
-        border-color: var(--accent-color);
       }
 
       .product-name-input {
@@ -1150,8 +1148,8 @@
       .unit-price-display {
         display: inline-block;
         padding: 0.25rem 0.5rem;
-        background: var(--dark-surface);
-        border: 1px solid var(--border-color);
+        background: transparent;
+        border: none;
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.3s ease;
@@ -1163,7 +1161,6 @@
       .unit-price-display:hover {
         background: #28a745;
         color: #fff;
-        border-color: #28a745;
       }
 
       .unit-price-input {
@@ -1185,6 +1182,22 @@
       .mobile-unit-price-row {
         margin-top: 0.35rem;
         margin-bottom: 0.35rem;
+      }
+
+      .merge-field-group {
+        background: var(--dark-surface);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .merge-field-group .form-check {
+        margin-bottom: 0.35rem;
+      }
+
+      .merge-product-summary {
+        font-size: 0.85rem;
+        color: var(--text-muted);
       }
     </style>
   </head>
@@ -1436,15 +1449,35 @@
 
       <!-- 在庫一覧セクション -->
       <div class="card mb-4">
-        <div class="card-header">
+        <div
+          class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2"
+        >
           <h5 class="mb-0"><i class="fas fa-list me-2"></i>在庫一覧</h5>
+          <div class="d-none d-md-flex gap-2 align-items-center">
+            <small class="text-muted" id="mergeSelectionHint"
+              >統合: 0/3 件選択</small
+            >
+            <button
+              type="button"
+              class="btn btn-sm btn-warning"
+              id="openMergeModalBtn"
+              disabled
+              onclick="openMergeModal()"
+            >
+              <i class="fas fa-compress-arrows-alt me-1"></i>選択した商品を統合
+            </button>
+          </div>
         </div>
         <div class="card-body">
+          <p class="text-muted small d-none d-md-block mb-2">
+            重複商品は左のチェックで 2〜3 件選び「選択した商品を統合」から、メーカー・商品名・単価・取引会社の採用元を選んで 1 件にまとめられます（在庫は合算）。
+          </p>
           <!-- デスクトップ用テーブル -->
           <div class="table-responsive d-none d-md-block">
             <table class="table table-hover">
               <thead>
                 <tr>
+                  <th style="width: 2.5rem" title="統合用（最大3件）">統合</th>
                   <th>メーカー</th>
                   <th>商品名</th>
                   <th>単価</th>
@@ -1552,6 +1585,44 @@
               onclick="confirmDelete()"
             >
               削除
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 商品統合モーダル -->
+    <div class="modal fade" id="mergeProductsModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-compress-arrows-alt me-2"></i>商品の統合
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body" id="mergeModalBody">
+            <!-- JavaScript で生成 -->
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              キャンセル
+            </button>
+            <button
+              type="button"
+              class="btn btn-warning"
+              id="confirmMergeBtn"
+              onclick="confirmMergeProducts()"
+            >
+              <i class="fas fa-check me-1"></i>統合する
             </button>
           </div>
         </div>
@@ -1729,6 +1800,8 @@
     <script>
       let currentDealer = "";
       let deleteProductId = null;
+      let mergeSelectedIds = new Set();
+      let mergeProductMap = {};
 
       // ページ読み込み時の初期化
       document.addEventListener("DOMContentLoaded", function () {
@@ -2008,6 +2081,15 @@
         fetch(url)
           .then((response) => response.json())
           .then((products) => {
+            products.forEach((p) => {
+              mergeProductMap[p.id] = p;
+            });
+            const validIds = new Set(products.map((p) => p.id));
+            mergeSelectedIds.forEach((id) => {
+              if (!validIds.has(id)) mergeSelectedIds.delete(id);
+            });
+            updateMergeSelectionUi();
+
             // 検索フィルタリング（全角・半角を区別しない）
             let filteredProducts = products;
             if (search) {
@@ -2109,6 +2191,13 @@
               : "stock-ok";
 
           row.innerHTML = `
+                        <td class="text-center">
+                            <input type="checkbox" class="form-check-input merge-select-cb"
+                                data-product-id="${product.id}"
+                                ${mergeSelectedIds.has(product.id) ? "checked" : ""}
+                                onchange="onMergeSelectionChange(this)"
+                                title="統合対象に追加（最大3件）">
+                        </td>
                         <td>
                             <div class="manufacturer-container">
                                 <span class="manufacturer-display" id="manufacturer_${
@@ -2933,6 +3022,174 @@
             inputEl.style.display = "none";
           }
         }
+      }
+
+      function updateMergeSelectionUi() {
+        const hint = document.getElementById("mergeSelectionHint");
+        const btn = document.getElementById("openMergeModalBtn");
+        const n = mergeSelectedIds.size;
+        if (hint) hint.textContent = `統合: ${n}/3 件選択`;
+        if (btn) btn.disabled = n < 2;
+      }
+
+      function onMergeSelectionChange(checkbox) {
+        const id = parseInt(checkbox.dataset.productId, 10);
+        if (checkbox.checked) {
+          if (mergeSelectedIds.size >= 3 && !mergeSelectedIds.has(id)) {
+            checkbox.checked = false;
+            showAlert("warning", "統合は最大3件まで選択できます");
+            return;
+          }
+          mergeSelectedIds.add(id);
+        } else {
+          mergeSelectedIds.delete(id);
+        }
+        updateMergeSelectionUi();
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text == null ? "" : String(text);
+        return div.innerHTML;
+      }
+
+      function mergeProductLabel(product, index) {
+        const dealer = product.dealer || "未設定";
+        return `商品${index + 1}（在庫 ${product.current_stock}）`;
+      }
+
+      function buildMergeFieldRadios(fieldName, fieldLabel, products, valueFn) {
+        let html = `<div class="merge-field-group"><label class="form-label fw-bold">${fieldLabel}</label>`;
+        products.forEach((p, i) => {
+          const val = valueFn(p);
+          const display = escapeHtml(val);
+          html += `
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="merge${fieldName}"
+                id="merge${fieldName}_${p.id}" value="${p.id}" ${i === 0 ? "checked" : ""}>
+              <label class="form-check-label" for="merge${fieldName}_${p.id}">
+                <span class="text-muted">${mergeProductLabel(p, i)}:</span> ${display}
+              </label>
+            </div>`;
+        });
+        html += "</div>";
+        return html;
+      }
+
+      function openMergeModal() {
+        const ids = [...mergeSelectedIds];
+        if (ids.length < 2 || ids.length > 3) {
+          showAlert("warning", "統合する商品を2〜3件選択してください");
+          return;
+        }
+        const products = ids
+          .map((id) => mergeProductMap[id])
+          .filter(Boolean);
+        if (products.length !== ids.length) {
+          showAlert("danger", "選択した商品の情報を取得できませんでした");
+          return;
+        }
+
+        const totalStock = products.reduce(
+          (sum, p) => sum + (parseInt(p.current_stock, 10) || 0),
+          0,
+        );
+
+        let bodyHtml = `<p class="mb-3">各項目で採用する商品を選んでください。統合後の在庫数は <strong>${totalStock}</strong>（合算）になります。</p>`;
+        bodyHtml += `<div class="mb-3 merge-product-summary">`;
+        products.forEach((p, i) => {
+          bodyHtml += `<div>・${escapeHtml(mergeProductLabel(p, i))}: ${escapeHtml(p.product_name)} / ${escapeHtml(p.manufacturer)} / ¥${Number(p.unit_price).toLocaleString()} / ${escapeHtml(p.dealer || "未設定")}</div>`;
+        });
+        bodyHtml += `</div>`;
+
+        bodyHtml += buildMergeFieldRadios(
+          "Manufacturer",
+          "メーカー",
+          products,
+          (p) => p.manufacturer || "未設定",
+        );
+        bodyHtml += buildMergeFieldRadios(
+          "ProductName",
+          "商品名（統合後の表示名）",
+          products,
+          (p) => p.product_name,
+        );
+        bodyHtml += buildMergeFieldRadios(
+          "UnitPrice",
+          "単価",
+          products,
+          (p) => `¥${Number(p.unit_price).toLocaleString()}`,
+        );
+        bodyHtml += buildMergeFieldRadios(
+          "Dealer",
+          "取引会社",
+          products,
+          (p) => p.dealer || "未設定",
+        );
+
+        document.getElementById("mergeModalBody").innerHTML = bodyHtml;
+        new bootstrap.Modal(
+          document.getElementById("mergeProductsModal"),
+        ).show();
+      }
+
+      function getMergeRadioValue(name) {
+        const el = document.querySelector(`input[name="${name}"]:checked`);
+        return el ? parseInt(el.value, 10) : null;
+      }
+
+      function confirmMergeProducts() {
+        const productIds = [...mergeSelectedIds];
+        const payload = {
+          product_ids: productIds,
+          manufacturer_from: getMergeRadioValue("mergeManufacturer"),
+          product_name_from: getMergeRadioValue("mergeProductName"),
+          unit_price_from: getMergeRadioValue("mergeUnitPrice"),
+          dealer_from: getMergeRadioValue("mergeDealer"),
+          keep_product_id: Math.min(...productIds),
+        };
+
+        if (
+          payload.manufacturer_from == null ||
+          payload.product_name_from == null ||
+          payload.unit_price_from == null ||
+          payload.dealer_from == null
+        ) {
+          showAlert("warning", "各項目の採用元を選択してください");
+          return;
+        }
+
+        const btn = document.getElementById("confirmMergeBtn");
+        btn.disabled = true;
+        btn.innerHTML =
+          '<span class="loading-spinner me-2"></span>統合中...';
+
+        fetch("/api/products/merge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              showAlert("success", data.message);
+              mergeSelectedIds.clear();
+              updateMergeSelectionUi();
+              bootstrap.Modal.getInstance(
+                document.getElementById("mergeProductsModal"),
+              ).hide();
+              loadInventory();
+            } else {
+              showAlert("danger", data.error);
+            }
+          })
+          .catch((error) => {
+            showAlert("danger", "統合エラー: " + error);
+          })
+          .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check me-1"></i>統合する';
+          });
       }
 
       // 最低必要数のインライン編集を開始

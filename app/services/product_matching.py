@@ -7,7 +7,7 @@ from difflib import SequenceMatcher
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 # 類似度がこの値未満なら別商品扱い
-DEFAULT_SIMILARITY_THRESHOLD = 0.60
+DEFAULT_SIMILARITY_THRESHOLD = 0.80
 # 1位と2位の類似度の差がこの値未満なら曖昧（誤マージ防止）。取引会社優先で決められる場合は採用する。
 DEFAULT_AMBIGUITY_MARGIN = 0.04
 

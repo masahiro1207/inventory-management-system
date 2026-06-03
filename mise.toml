@@ -1,0 +1,8 @@
+# Railway / Nixpacks が mise で Python を入れる際の設定
+# https://mise.jdx.dev/lang/python.html
+
+[settings]
+python.github_attestations = false
+
+[tools]
+python = "3.12"

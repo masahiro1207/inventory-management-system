@@ -6,10 +6,15 @@ import unicodedata
 from difflib import SequenceMatcher
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-# 類似度がこの値未満なら別商品扱い
-DEFAULT_SIMILARITY_THRESHOLD = 0.80
+# 類似度がこの値未満なら別商品扱い。
+# 0.80 だと「…10 オレンジ」と「…10 ピンク」が約 0.865 で誤マッチする。
+# 0.92 なら同一商品の表記ゆれ（半角/全角・スペース差 ≒0.97）は通し、色違いは弾ける。
+# 上限目安: 0.97 超えると「フェス10」と「フェス 10」のような軽微な空白差も別商品になる。
+DEFAULT_SIMILARITY_THRESHOLD = 0.92
 # 1位と2位の類似度の差がこの値未満なら曖昧（誤マージ防止）。取引会社優先で決められる場合は採用する。
-DEFAULT_AMBIGUITY_MARGIN = 0.04
+DEFAULT_AMBIGUITY_MARGIN = 0.05
+
+_NUM_TOKEN = re.compile(r"^\d+(?:\.\d+)?$")
 
 
 def normalize_product_name(text: Any) -> str:
@@ -39,6 +44,28 @@ def name_similarity(a: str, b: str) -> float:
     if not na or not nb:
         return 0.0
     return float(SequenceMatcher(None, na, nb).ratio())
+
+
+def has_variant_token_conflict(a: str, b: str) -> bool:
+    """
+    色名・容量数値など別 SKU になりやすいトークンが食い違う場合 True。
+    正規化後に完全一致する場合は False（fuzzy 判定には使わない）。
+    """
+    na, nb = normalize_product_name(a), normalize_product_name(b)
+    if not na or not nb or na == nb:
+        return False
+
+    ta, tb = na.split(), nb.split()
+
+    nums_a = [t for t in ta if _NUM_TOKEN.match(t)]
+    nums_b = [t for t in tb if _NUM_TOKEN.match(t)]
+    if nums_a and nums_b and nums_a != nums_b:
+        return True
+
+    if ta[-1] != tb[-1]:
+        return True
+
+    return False
 
 
 def dealer_tier(product: Any, preferred_dealer: str) -> int:
@@ -83,9 +110,21 @@ def _names_for_product(product: Any, alias_map: Dict[int, List[str]]) -> List[st
 
 
 def _best_similarity(candidate_name: str, names: Sequence[str]) -> float:
+    sim, _ = _best_similarity_detail(candidate_name, names)
+    return sim
+
+
+def _best_similarity_detail(
+    candidate_name: str, names: Sequence[str]
+) -> Tuple[float, str]:
     if not names:
-        return 0.0
-    return max(name_similarity(candidate_name, n) for n in names)
+        return 0.0, ""
+    best_sim, best_name = 0.0, ""
+    for n in names:
+        sim = name_similarity(candidate_name, n)
+        if sim > best_sim:
+            best_sim, best_name = sim, n
+    return best_sim, best_name
 
 
 def find_best_product_match(
@@ -129,8 +168,12 @@ def find_best_product_match(
 
     scored: List[Tuple[Any, float, int]] = []
     for p in pool:
-        sim = _best_similarity(candidate_name, _names_for_product(p, alias_map))
+        sim, matched_name = _best_similarity_detail(
+            candidate_name, _names_for_product(p, alias_map)
+        )
         if sim <= 0:
+            continue
+        if sim < 1.0 and has_variant_token_conflict(candidate_name, matched_name):
             continue
         tier = dealer_tier(p, preferred_dealer)
         scored.append((p, sim, tier))

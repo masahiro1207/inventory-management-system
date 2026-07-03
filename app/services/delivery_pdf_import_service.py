@@ -9,7 +9,11 @@ from typing import Any, Dict, List, Tuple
 
 from app import db
 from app.models.inventory import Product
-from app.services.product_matching import find_best_product_match
+from app.services.product_matching import (
+    DEFAULT_AMBIGUITY_MARGIN,
+    DEFAULT_SIMILARITY_THRESHOLD,
+    find_best_product_match,
+)
 from app.services.product_alias_service import (
     load_alias_map,
     register_import_name,
@@ -88,8 +92,8 @@ class DeliveryPdfImportService:
         file_path: str,
         preferred_dealer: str = "",
         *,
-        similarity_threshold: float = 0.80,
-        ambiguity_margin: float = 0.04,
+        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
+        ambiguity_margin: float = DEFAULT_AMBIGUITY_MARGIN,
     ) -> Tuple[bool, str, Dict[str, Any]]:
         """
         納品書PDFを処理。対応: ビューティガレージ系（ご注文番号 S…・商品コード・商品名・数量 個）。

@@ -647,9 +647,9 @@ def upload_inventory_pdf():
 
         dealer = request.form.get('dealer', '')
         try:
-            match_threshold = float(request.form.get('match_threshold', '0.8'))
+            match_threshold = float(request.form.get('match_threshold', '0.92'))
         except ValueError:
-            match_threshold = 0.8
+            match_threshold = 0.92
         match_threshold = max(0.5, min(1.0, match_threshold))
 
         from werkzeug.utils import secure_filename

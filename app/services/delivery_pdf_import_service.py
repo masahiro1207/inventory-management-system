@@ -24,10 +24,45 @@ from app.services.product_alias_service import (
 _MAX_PRODUCT_NAME_LEN = 200
 _MAX_PRODUCT_CODE_LEN = 50
 
-# 行頭: 注文番号 S… + 商品コード（数字のみ or 英数字） + 商品名の開始
-_LINE_START = re.compile(r"^(S\d+-\d+)\s+(\S+)\s+(.+)$")
+# 行頭: 注文番号 S… + 商品コード + 商品名（PDF によってはコードが注文番号に連結）
+# 注文行番号は -10, -100 など最大3桁。\\d+ だと -100225954 まで吸い込んでしまう。
+_LINE_START_SPACED = re.compile(r"^(S\d+-\d{1,3})\s+(\S+)\s+(.+)$")
+# S012004173-170ZC-1649N など英数字コードが連結
+_LINE_START_GLUED_ALPHA = re.compile(
+    r"^(S\d+-\d{1,3})([A-Z]{1,3}-\d+[A-Z0-9]*)\s+(.+)$"
+)
+# S012004173-100225954 など 6 桁商品コードが連結
+_LINE_START_GLUED_NUM = re.compile(r"^(S\d+-)(\d*?)(\d{6})\s+(.+)$")
 # 「2 個」「2個」「２ 個」（NFKC 後）などに対応
 _QTY_LINE = re.compile(r"^([0-9]{1,9})\s*個\s*$")
+# 商品名末尾に数量が付く行（例: トリシスコア KH 200ml 1 個）
+_INLINE_QTY = re.compile(r"^(.+?)\s+(\d{1,9})\s*個\s*$")
+
+
+def _parse_order_line_start(line: str) -> Tuple[str, str, str] | None:
+    """明細行の先頭から (注文番号, 商品コード, 商品名の開始) を取り出す。"""
+    m = _LINE_START_SPACED.match(line)
+    if m:
+        return m.group(1), m.group(2), m.group(3)
+
+    m = _LINE_START_GLUED_ALPHA.match(line)
+    if m:
+        return m.group(1), m.group(2), m.group(3)
+
+    m = _LINE_START_GLUED_NUM.match(line)
+    if m:
+        order_id = f"{m.group(1)}{m.group(2)}"
+        return order_id, m.group(3), m.group(4)
+
+    return None
+
+
+def _split_inline_qty(text: str) -> Tuple[str, int | None]:
+    """商品名文字列末尾の「N 個」を分離する。"""
+    m = _INLINE_QTY.match(text.strip())
+    if m:
+        return m.group(1).strip(), int(m.group(2))
+    return text.strip(), None
 
 
 def parse_beauty_garage_delivery_text(text: str) -> List[Dict[str, Any]]:
@@ -40,26 +75,29 @@ def parse_beauty_garage_delivery_text(text: str) -> List[Dict[str, Any]]:
     items: List[Dict[str, Any]] = []
     i = 0
     while i < len(lines):
-        m = _LINE_START.match(lines[i])
-        if not m:
+        parsed = _parse_order_line_start(lines[i])
+        if not parsed:
             i += 1
             continue
-        order_id, sku, name_start = m.group(1), m.group(2), m.group(3)
-        name_parts = [name_start]
+        order_id, sku, name_start = parsed
+        name_start, qty = _split_inline_qty(name_start)
+        name_parts = [name_start] if name_start else []
         i += 1
-        qty: int | None = None
-        while i < len(lines):
+        while i < len(lines) and qty is None:
             line = lines[i]
             qm = _QTY_LINE.match(line)
             if qm:
                 qty = int(qm.group(1))
                 i += 1
                 break
-            # 数量行が欠けたまま次の明細が始まった場合は、ここで打ち切り（次行を明細先頭として再処理）
-            if _LINE_START.match(line):
+            if _parse_order_line_start(line):
                 break
             name_parts.append(line)
             i += 1
+        if qty is None:
+            full_name = " ".join(name_parts)
+            full_name, qty = _split_inline_qty(full_name)
+            name_parts = [full_name] if full_name else []
         if qty is not None:
             full_name = " ".join(name_parts)
             full_name = re.sub(r"\s+", " ", full_name).strip()[:_MAX_PRODUCT_NAME_LEN]

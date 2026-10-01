@@ -7,6 +7,18 @@ import threading
 db = SQLAlchemy()
 
 
+def _normalize_database_url(url: str) -> str:
+    """Railway/Heroku の postgres:// を修正し、インストール済みの psycopg2 を使う。"""
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+    # SQLAlchemy 2.x + Python 3.12 は postgresql:// で psycopg(v3) を選ぶことがある
+    if url.startswith("postgresql+psycopg://"):
+        url = url.replace("postgresql+psycopg://", "postgresql+psycopg2://", 1)
+    elif url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return url
+
+
 def create_app():
     app = Flask(__name__)
     
@@ -15,10 +27,7 @@ def create_app():
     
     # データベース設定（本番環境では環境変数から取得）
     database_url = os.environ.get('DATABASE_URL') or os.environ.get('DATABASE_PUBLIC_URL', 'sqlite:///inventory.db')
-    
-    # PostgreSQLのURLを修正（HerokuやRailwayの古いURLフォーマット対応）
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    database_url = _normalize_database_url(database_url)
     
     # 本番環境の検証（Railway環境の場合）
     if os.environ.get('RAILWAY_ENVIRONMENT'):
@@ -29,7 +38,7 @@ def create_app():
         print(f"DEBUG: Final database_url = {database_url}")
         
         # PostgreSQLが推奨だが、SQLiteでも動作可能にする
-        if not database_url.startswith('postgresql://'):
+        if not database_url.startswith('postgresql'):
             print("WARNING: Using SQLite on Railway - PostgreSQL is recommended for production!")
             # SQLiteの場合、データディレクトリを確実に作成
             if database_url.startswith('sqlite'):
@@ -46,7 +55,7 @@ def create_app():
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    if database_url.startswith('postgresql://'):
+    if database_url.startswith('postgresql'):
         app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
             'pool_pre_ping': True,
             'connect_args': {'connect_timeout': 10},

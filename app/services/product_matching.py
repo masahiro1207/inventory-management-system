@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 # 0.80 だと「…10 オレンジ」と「…10 ピンク」が約 0.865 で誤マッチする。
 # 0.92 なら同一商品の表記ゆれ（半角/全角・スペース差 ≒0.97）は通し、色違いは弾ける。
 # 上限目安: 0.97 超えると「フェス10」と「フェス 10」のような軽微な空白差も別商品になる。
-DEFAULT_SIMILARITY_THRESHOLD = 0.92
+DEFAULT_SIMILARITY_THRESHOLD = 0.97
 # 1位と2位の類似度の差がこの値未満なら曖昧（誤マージ防止）。取引会社優先で決められる場合は採用する。
 DEFAULT_AMBIGUITY_MARGIN = 0.05
 

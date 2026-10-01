@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 Railway/本番用: PORT を確実に読み取り Gunicorn を起動する。
-シェルでの $PORT 展開に依存しない。
+シェルでの $PORT 展開に依存しない。exec で PID 1 を gunicorn に渡す。
 """
 import os
 import sys
-import subprocess
 
-def main():
+
+def main() -> None:
     port = os.environ.get("PORT", "5000")
     try:
         port_int = int(port)
@@ -17,13 +17,26 @@ def main():
     print(f"Starting gunicorn on {bind} (PORT={port})", flush=True)
     sys.stdout.flush()
     sys.stderr.flush()
-    subprocess.run([
+    args = [
+        sys.executable,
+        "-m",
         "gunicorn",
-        "--bind", bind,
-        "--workers", "1",
-        "--timeout", "120",
+        "--bind",
+        bind,
+        "--workers",
+        "1",
+        "--timeout",
+        "120",
+        "--access-logfile",
+        "-",
+        "--error-logfile",
+        "-",
+        "--log-level",
+        "info",
         "run:app",
-    ], check=True)
+    ]
+    os.execvp(sys.executable, args)
+
 
 if __name__ == "__main__":
     main()

@@ -6,6 +6,7 @@ import threading
 
 db = SQLAlchemy()
 
+
 def create_app():
     app = Flask(__name__)
     
@@ -45,6 +46,11 @@ def create_app():
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    if database_url.startswith('postgresql://'):
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_pre_ping': True,
+            'connect_args': {'connect_timeout': 10},
+        }
     
     # CORS設定
     CORS(app)
@@ -52,16 +58,13 @@ def create_app():
     # データベース初期化
     db.init_app(app)
     
-    # ヘルスチェックを最初に登録（他インポートより前で、Railway等で確実に 200 を返す）
     @app.route('/health')
     def health():
         return Response('ok', status=200, mimetype='text/plain')
     
-    # ブループリントの登録
     from app.controllers.inventory_controller import inventory_bp
     app.register_blueprint(inventory_bp)
     
-    # 起動をブロックしないよう、DB・ディレクトリ初期化はバックグラウンドで実行（/health がすぐ応答できるように）
     def _init_db_and_dirs():
         with app.app_context():
             try:

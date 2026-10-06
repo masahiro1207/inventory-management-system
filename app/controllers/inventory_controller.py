@@ -5,6 +5,7 @@ from app.services.pdf_service import PDFService
 from app.services.delivery_pdf_import_service import DeliveryPdfImportService
 from app.services.product_alias_service import on_product_renamed
 from app.services.product_merge_service import merge_products
+from app.services.product_matching import DEFAULT_SIMILARITY_THRESHOLD
 from app import db
 from datetime import datetime
 import os
@@ -646,10 +647,13 @@ def upload_inventory_pdf():
             return jsonify({'success': False, 'error': 'PDFファイルのみ対応しています'}), 400
 
         dealer = request.form.get('dealer', '')
+        default_threshold = str(DEFAULT_SIMILARITY_THRESHOLD)
         try:
-            match_threshold = float(request.form.get('match_threshold', '0.92'))
+            match_threshold = float(
+                request.form.get('match_threshold', default_threshold)
+            )
         except ValueError:
-            match_threshold = 0.92
+            match_threshold = DEFAULT_SIMILARITY_THRESHOLD
         match_threshold = max(0.5, min(1.0, match_threshold))
 
         from werkzeug.utils import secure_filename

@@ -65,6 +65,14 @@ def _split_inline_qty(text: str) -> Tuple[str, int | None]:
     return text.strip(), None
 
 
+def _repair_pdf_product_name(name: str) -> str:
+    """PDF改行で割れた容量表記を結合（例: 1 + 20g → 120g）。"""
+    name = re.sub(r"\s+", " ", (name or "").strip())
+    name = re.sub(r"\b(\d)\s+(\d{2}g\b)", r"\1\2", name, flags=re.IGNORECASE)
+    name = re.sub(r"\b(\d{2})\s+(\d{2}g\b)", r"\1\2", name, flags=re.IGNORECASE)
+    return name
+
+
 def parse_beauty_garage_delivery_text(text: str) -> List[Dict[str, Any]]:
     """
     ビューティガレージ納品書（テキスト抽出結果）から明細をパースする。
@@ -100,7 +108,8 @@ def parse_beauty_garage_delivery_text(text: str) -> List[Dict[str, Any]]:
             name_parts = [full_name] if full_name else []
         if qty is not None:
             full_name = " ".join(name_parts)
-            full_name = re.sub(r"\s+", " ", full_name).strip()[:_MAX_PRODUCT_NAME_LEN]
+            full_name = _repair_pdf_product_name(full_name)
+            full_name = full_name.strip()[:_MAX_PRODUCT_NAME_LEN]
             items.append(
                 {
                     "order_id": order_id,
@@ -153,10 +162,12 @@ class DeliveryPdfImportService:
             updated_count = 0
             added_count = 0
             ambiguous: List[Dict[str, Any]] = []
+            entries: List[Dict[str, Any]] = []
 
             for row in line_items:
                 name = row["product_name"]
                 qty = row["quantity"]
+                slip = row.get("slip_product_code", "")
                 match, score, reason = find_best_product_match(
                     name,
                     working_list,
@@ -173,6 +184,16 @@ class DeliveryPdfImportService:
                             "best_score": round(score, 3),
                         }
                     )
+                    entries.append(
+                        {
+                            "action": "skipped_ambiguous",
+                            "slip_product_code": slip,
+                            "product_name": name,
+                            "quantity": qty,
+                            "score": round(score, 3),
+                            "reason": reason,
+                        }
+                    )
                     continue
                 if match is not None:
                     match.current_stock += qty
@@ -180,6 +201,18 @@ class DeliveryPdfImportService:
                     register_import_name(match, name, "pdf")
                     sync_alias_map_entry(alias_map, match)
                     updated_count += 1
+                    entries.append(
+                        {
+                            "action": "updated",
+                            "slip_product_code": slip,
+                            "product_name": name,
+                            "quantity": qty,
+                            "product_id": match.id,
+                            "matched_name": match.product_name,
+                            "score": round(score, 3),
+                            "reason": reason,
+                        }
+                    )
                 else:
                     timestamp = int(time.time() * 1000) % 100000
                     prefix = (preferred_dealer[:3] if preferred_dealer else "PDF").upper()
@@ -212,6 +245,17 @@ class DeliveryPdfImportService:
                     sync_alias_map_entry(alias_map, new_product)
                     working_list.append(new_product)
                     added_count += 1
+                    entries.append(
+                        {
+                            "action": "added",
+                            "slip_product_code": slip,
+                            "product_name": name,
+                            "quantity": qty,
+                            "product_id": new_product.id,
+                            "score": round(score, 3),
+                            "reason": reason,
+                        }
+                    )
 
             db.session.commit()
             detail = {
@@ -219,6 +263,7 @@ class DeliveryPdfImportService:
                 "updated": updated_count,
                 "added": added_count,
                 "ambiguous": ambiguous,
+                "entries": entries,
                 "similarity_threshold": similarity_threshold,
             }
             msg = (

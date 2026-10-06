@@ -1969,7 +1969,23 @@
             .then((response) => response.json())
             .then((data) => {
               if (data.success) {
-                showAlert("success", data.message);
+                let msg = data.message;
+                const entries = data.detail?.entries;
+                if (entries?.length) {
+                  const lines = entries
+                    .slice(0, 12)
+                    .map(
+                      (e) =>
+                        `${e.action === "updated" ? "加算" : e.action === "added" ? "新規" : "スキップ"}: ${e.product_name}（${e.quantity}個）`,
+                    )
+                    .join("<br>");
+                  const more =
+                    entries.length > 12
+                      ? `<br><small>…他 ${entries.length - 12} 件</small>`
+                      : "";
+                  msg += `<br><small class="d-block mt-2 text-start">${lines}${more}</small>`;
+                }
+                showAlert("success", msg);
                 loadInventory();
                 fileInput.value = "";
                 document.getElementById("uploadDealer").value = "";

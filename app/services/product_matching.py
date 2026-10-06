@@ -6,15 +6,15 @@ import unicodedata
 from difflib import SequenceMatcher
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-# 類似度がこの値未満なら別商品扱い。
-# 0.80 だと「…10 オレンジ」と「…10 ピンク」が約 0.865 で誤マッチする。
-# 0.92 なら同一商品の表記ゆれ（半角/全角・スペース差 ≒0.97）は通し、色違いは弾ける。
-# 上限目安: 0.97 超えると「フェス10」と「フェス 10」のような軽微な空白差も別商品になる。
-DEFAULT_SIMILARITY_THRESHOLD = 0.97
+# 1.0 = あいまい照合なし（正規化後の完全一致 + エイリアスのみ）。
+# PDF/CSV では別トーン（007/006 等）の誤マージを防ぐため完全一致を推奨。
+DEFAULT_SIMILARITY_THRESHOLD = 1.0
 # 1位と2位の類似度の差がこの値未満なら曖昧（誤マージ防止）。取引会社優先で決められる場合は採用する。
 DEFAULT_AMBIGUITY_MARGIN = 0.05
 
 _NUM_TOKEN = re.compile(r"^\d+(?:\.\d+)?$")
+# ヘアカラー等: 007(ナチュラルブラウン7) のトーン番号
+_SHADE_CODE = re.compile(r"\b(\d{3})\(")
 
 
 def normalize_product_name(text: Any) -> str:
@@ -56,6 +56,15 @@ def has_variant_token_conflict(a: str, b: str) -> bool:
         return False
 
     ta, tb = na.split(), nb.split()
+
+    shades_a = _SHADE_CODE.findall(na)
+    shades_b = _SHADE_CODE.findall(nb)
+    if shades_a and shades_b and shades_a != shades_b:
+        return True
+
+    # 007(…7) と 006(…6) のように第2トークンがトーン違い
+    if len(ta) >= 2 and len(tb) >= 2 and ta[0] == tb[0] and ta[1] != tb[1]:
+        return True
 
     nums_a = [t for t in ta if _NUM_TOKEN.match(t)]
     nums_b = [t for t in tb if _NUM_TOKEN.match(t)]
